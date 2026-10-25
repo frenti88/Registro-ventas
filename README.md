@@ -48,7 +48,7 @@ Aplicación web **Mobile-First**, autónoma y de alto rendimiento, diseñada par
 4. **Paso 4 — Confirmación Emocional y Animada:**
    - Icono circular con checkmark animado en Verde Uber (`#05944F`).
    - Mensaje emocional e inspirador rotativo que resalta el impacto socioeconómico en las familias emprendedoras locales.
-   - Ficha resumen con N° de visita (`VIS-XXXX`), fecha y hora en zona horaria `America/Bogota` (UTC-5), unidades y totales.
+   - Ficha resumen con ID de registro correlativo (`RV-0001`), fecha y hora en zona horaria `America/Bogota` (UTC-5), unidades y totales.
    - Badge de sincronización: `✓ Sincronizado en Google Sheets` o `⏳ Guardado localmente (Cola offline)`.
    - **Dos opciones de continuación:**
      - `"Registrar otra venta en este mismo emprendimiento"` (reinicia cantidades pero conserva el comercio en el Paso 2).

@@ -755,6 +755,10 @@
           <!-- Sale Receipt Summary Card (16px Data Values) -->
           <div class="bg-white rounded-2xl border border-[#E2E2E2] p-5 shadow-sm space-y-3">
             <div class="space-y-3 text-[16px]">
+              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span class="text-gray-500 text-[16px]">ID de registro:</span>
+                <span class="font-mono font-bold text-black text-[16px]">{{ lastConfirmedVisit.id }}</span>
+              </div>
               <div class="flex justify-between items-center">
                 <span class="text-gray-500 text-[16px]">Emprendimiento:</span>
                 <span class="font-bold text-black text-[16px] text-right truncate max-w-[200px]">{{ lastConfirmedVisit.comercioNombre }}</span>
@@ -923,7 +927,7 @@
             <div v-if="isVisitExpanded(visita.id)" class="pt-2 border-t border-gray-100 space-y-2 text-xs">
               <div v-for="item in visita.items" :key="item.registroId" class="flex items-center justify-between py-1 border-b border-gray-50">
                 <div>
-                  <p class="font-bold text-black">{{ item.producto }}</p>
+                  <p class="font-bold text-black">{{ item.producto }} <span class="font-mono text-gray-400 font-normal text-[11px]">({{ item.registroId }})</span></p>
                   <p class="text-gray-500">{{ item.unidades }} uds × {{ formatCOP(item.precioUnitario) }} • <span class="font-medium">{{ item.metodoPago }}</span></p>
                 </div>
                 <p class="font-bold text-black">{{ formatCOP(item.subtotal) }}</p>
@@ -1082,7 +1086,7 @@
                   :key="item.registroId"
                   class="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-700 font-medium"
                 >
-                  {{ item.unidades }}× {{ item.producto }} ({{ item.metodoPago }})
+                  <span class="font-mono text-gray-500">{{ item.registroId }}:</span> {{ item.unidades }}× {{ item.producto }} ({{ item.metodoPago }})
                 </span>
               </div>
             </div>
@@ -1923,7 +1927,7 @@ function doPost(e) {
 
     for (var j = 0; j < items.length; j++) {
       var it = items[j];
-      var regId = String(it.registroId || (payload.visitaId + "-" + (j + 1))).trim();
+      var regId = String(it.registroId || payload.visitaId || ("RV-" + Utilities.formatString("%04d", j + 1))).trim();
       var unidades = Number(it.unidades || 0);
       var precio = Number(it.precioUnitario || 0);
       var total = Number(it.subtotal || (unidades * precio));
@@ -2045,6 +2049,21 @@ createApp({
     const lastConfirmedVisit = ref({});
     const currentInspirationalMessage = ref('');
 
+    // Sequence counter for RV-0001
+    const lastRegSeq = ref(0);
+
+    const parseSeqFromId = (idStr) => {
+      if (!idStr) return 0;
+      const match = String(idStr).match(/RV-(\d+)/i);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+
+    const getNextRegistroId = () => {
+      lastRegSeq.value += 1;
+      localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+      return `RV-${String(lastRegSeq.value).padStart(4, '0')}`;
+    };
+
     // Historial state
     const historySearchQuery = ref('');
     const expandedVisits = ref({});
@@ -2146,6 +2165,20 @@ createApp({
         const storedVisitas = localStorage.getItem('rm_visitas');
         visitas.value = storedVisitas ? JSON.parse(storedVisitas) : [];
 
+        // Calculate maximum sequence number for RV-XXXX pattern
+        let maxSeq = parseInt(localStorage.getItem('rm_last_reg_seq') || '0', 10);
+        visitas.value.forEach(v => {
+          const vSeq = parseSeqFromId(v.id);
+          if (vSeq > maxSeq) maxSeq = vSeq;
+          if (Array.isArray(v.items)) {
+            v.items.forEach(it => {
+              const itSeq = parseSeqFromId(it.registroId);
+              if (itSeq > maxSeq) maxSeq = itSeq;
+            });
+          }
+        });
+        lastRegSeq.value = maxSeq;
+
         const storedQueue = localStorage.getItem('rm_pending_queue');
         pendingQueue.value = storedQueue ? JSON.parse(storedQueue) : [];
 
@@ -2195,6 +2228,7 @@ createApp({
       localStorage.setItem('rm_visitas', JSON.stringify(visitas.value));
       localStorage.setItem('rm_pending_queue', JSON.stringify(pendingQueue.value));
       localStorage.setItem('rm_recent_visits', JSON.stringify(recentVisitsByUser.value));
+      localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
       localStorage.setItem('rm_webhook_url', webhookUrl.value);
       localStorage.setItem('rm_firestore_config', JSON.stringify(firestoreConfig.value));
       if (currentUser.value) {
@@ -2474,18 +2508,18 @@ createApp({
       const isoUtc = now.toISOString();
       const { fecha, hora } = getBogotaDateTime(isoUtc);
 
-      const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const visitaId = `VIS-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${uniqueSuffix}`;
-
-      // Flattened sold items
-      const itemsPayload = activeCartItems.value.map((it, idx) => ({
-        registroId: `REG-${visitaId}-${idx + 1}`,
+      // Flattened sold items with sequential RV-XXXX sequence (e.g. RV-0001, RV-0002)
+      const itemsPayload = activeCartItems.value.map((it) => ({
+        registroId: getNextRegistroId(),
         producto: it.nombre,
         unidades: it.cantidad,
         precioUnitario: it.precio,
         subtotal: it.subtotal,
         metodoPago: it.metodoPago
       }));
+
+      // Sale transaction ID is linked to the primary item's registration ID
+      const visitaId = itemsPayload.length > 0 ? itemsPayload[0].registroId : getNextRegistroId();
 
       const newVisit = {
         id: visitaId,
@@ -2620,7 +2654,11 @@ createApp({
       return userVisits.value.filter(v => 
         v.comercioNombre.toLowerCase().includes(q) ||
         v.fechaBogota.includes(q) ||
-        v.id.toLowerCase().includes(q)
+        v.id.toLowerCase().includes(q) ||
+        (Array.isArray(v.items) && v.items.some(it => 
+          it.producto.toLowerCase().includes(q) || 
+          (it.registroId && it.registroId.toLowerCase().includes(q))
+        ))
       );
     });
 
@@ -3088,6 +3126,8 @@ createApp({
       toast,
       showToast,
       hideToast,
+      lastRegSeq,
+      getNextRegistroId,
 
       // Methods
       formatCOP,

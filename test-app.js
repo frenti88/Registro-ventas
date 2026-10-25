@@ -203,6 +203,8 @@ async function runE2ETests() {
         console.log('Step 4 reached (¡Venta registrada con éxito!):', isStep4);
         const hasReceipt = await evalExpr('document.body.innerText.toLowerCase().includes("vendedor") && document.body.innerText.toLowerCase().includes("total recaudado")');
         console.log('Receipt card present with Vendedor and Total recaudado:', hasReceipt);
+        const hasSeqId = await evalExpr('document.body.innerText.includes("RV-")');
+        console.log('Receipt card includes sequential ID (RV-0001):', hasSeqId);
 
         // Capture step 4 screenshot with full mobile view
         await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
@@ -229,6 +231,8 @@ async function runE2ETests() {
 
         const hasHistoryCard = await evalExpr('document.body.innerText.toLowerCase().includes("hilos del origen") && document.body.innerText.toLowerCase().includes("editar cantidades")');
         console.log('Confirmed visit in user history:', hasHistoryCard);
+        const hasHistorySeqId = await evalExpr('document.body.innerText.includes("RV-")');
+        console.log('Mis Registros includes sequential ID (RV-0001):', hasHistorySeqId);
 
         // Test Reversible Delete with Deshacer Toast
         console.log('Testing Reversible Delete with "Deshacer" toast...');
