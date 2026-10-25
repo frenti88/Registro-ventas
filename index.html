@@ -292,7 +292,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
           </svg>
         </div>
-        <h2 class="text-2xl font-extrabold text-black tracking-tight">Acceso operativo</h2>
+        <h2 class="text-2xl font-extrabold text-black tracking-tight">Acceso de vendedores</h2>
         <p class="text-sm text-gray-500 mt-1">Identifícate para iniciar el registro de ventas en campo</p>
       </div>
 
@@ -300,7 +300,7 @@
       <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-xs font-bold text-gray-500">Acceso rápido (1 toque)</h3>
-          <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">Personal de Campo</span>
+          <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">Equipo de ventas</span>
         </div>
         <div class="space-y-2">
           <button 
@@ -319,34 +319,11 @@
               </div>
             </div>
             <span class="text-xs font-semibold px-2 py-1 rounded-md" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'">
-              {{ user.role === 'admin' ? 'Admin' : 'Operativo' }}
+              {{ getUserRoleLabel(user) }}
             </span>
           </button>
         </div>
       </div>
-
-      <!-- Manual Email Login -->
-      <form @submit.prevent="loginManual" class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
-        <div>
-          <label class="block text-xs font-bold text-gray-500">Ingresar con otro correo</label>
-          <p class="text-[11px] text-gray-400 mt-0.5">Si tu correo no está en el listado, se creará un acceso operativo local.</p>
-        </div>
-        <div class="relative">
-          <input 
-            type="email" 
-            v-model="loginEmail" 
-            placeholder="ejemplo@campo.co" 
-            required 
-            class="w-full h-12 px-4 rounded-xl border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-base font-medium"
-          />
-        </div>
-        <button 
-          type="submit" 
-          class="w-full h-12 bg-black text-white font-bold rounded-xl active-scale transition touch-target"
-        >
-          Iniciar sesión →
-        </button>
-      </form>
     </section>
 
     <!-- PANTALLA PRINCIPAL CUANDO EL USUARIO ESTÁ AUTENTICADO -->
@@ -778,36 +755,36 @@
             </h2>
           </div>
 
-          <!-- Sale Receipt Summary Card -->
-          <div class="bg-white rounded-2xl border border-[#E2E2E2] p-4 shadow-sm space-y-2.5">
-            <div class="space-y-2 text-xs">
-              <div class="flex justify-between">
-                <span class="text-gray-500">Comercio:</span>
-                <span class="font-bold text-black">{{ lastConfirmedVisit.comercioNombre }}</span>
+          <!-- Sale Receipt Summary Card (16px Data Values) -->
+          <div class="bg-white rounded-2xl border border-[#E2E2E2] p-5 shadow-sm space-y-3">
+            <div class="space-y-3 text-[16px]">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">Emprendimiento:</span>
+                <span class="font-bold text-black text-[16px] text-right truncate max-w-[200px]">{{ lastConfirmedVisit.comercioNombre }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Vendedor:</span>
-                <span class="font-bold text-black">{{ lastConfirmedVisit.usuarioNombre || lastConfirmedVisit.usuarioEmail }}</span>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">{{ getUserRoleLabel(currentUser) }}:</span>
+                <span class="font-bold text-black text-[16px] text-right truncate max-w-[200px]">{{ lastConfirmedVisit.usuarioNombre || lastConfirmedVisit.usuarioEmail }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Unidades:</span>
-                <span class="font-bold text-black">{{ lastConfirmedVisit.totalUnidades }} uds</span>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">Unidades vendidas:</span>
+                <span class="font-bold text-black text-[16px]">{{ lastConfirmedVisit.totalUnidades }} uds</span>
               </div>
-              <div v-if="lastConfirmedVisit.totalEfectivo > 0" class="flex justify-between">
-                <span class="text-gray-500">Efectivo:</span>
-                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalEfectivo) }}</span>
+              <div v-if="lastConfirmedVisit.totalEfectivo > 0" class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">Efectivo:</span>
+                <span class="font-bold text-black text-[16px]">{{ formatCOP(lastConfirmedVisit.totalEfectivo) }}</span>
               </div>
-              <div v-if="lastConfirmedVisit.totalTransferencia > 0" class="flex justify-between">
-                <span class="text-gray-500">Transferencia (QR):</span>
-                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalTransferencia) }}</span>
+              <div v-if="lastConfirmedVisit.totalTransferencia > 0" class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">Transferencia (QR):</span>
+                <span class="font-bold text-black text-[16px]">{{ formatCOP(lastConfirmedVisit.totalTransferencia) }}</span>
               </div>
-              <div v-if="lastConfirmedVisit.totalTarjeta > 0" class="flex justify-between">
-                <span class="text-gray-500">Tarjeta:</span>
-                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalTarjeta) }}</span>
+              <div v-if="lastConfirmedVisit.totalTarjeta > 0" class="flex justify-between items-center">
+                <span class="text-gray-500 text-[16px]">Tarjeta:</span>
+                <span class="font-bold text-black text-[16px]">{{ formatCOP(lastConfirmedVisit.totalTarjeta) }}</span>
               </div>
-              <div class="flex justify-between pt-2 border-t border-gray-100 text-sm">
-                <span class="font-bold text-black">Total recaudado:</span>
-                <span class="font-black text-[#05944F] text-base">{{ formatCOP(lastConfirmedVisit.totalVenta) }}</span>
+              <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                <span class="font-bold text-black text-[16px]">Total recaudado:</span>
+                <span class="font-black text-[#05944F] text-[18px] sm:text-[20px]">{{ formatCOP(lastConfirmedVisit.totalVenta) }}</span>
               </div>
             </div>
           </div>
@@ -1337,7 +1314,7 @@
                 </div>
                 <div class="flex items-center space-x-2">
                   <span class="px-2 py-0.5 rounded font-bold" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-900' : 'bg-gray-100 text-gray-700'">
-                    {{ user.role }}
+                    {{ getUserRoleLabel(user) }}
                   </span>
                   <button 
                     v-if="user.email !== currentUser.email" 
@@ -1558,13 +1535,13 @@
       <div class="flex items-center justify-between pb-2 border-b border-gray-100">
         <div>
           <h3 id="user-menu-title" class="text-base font-bold text-black">{{ currentUser.nombre }}</h3>
-          <p class="text-xs text-gray-500">{{ currentUser.email }} ({{ currentUser.role }})</p>
+          <p class="text-xs text-gray-500">{{ currentUser.email }} ({{ getUserRoleLabel(currentUser) }})</p>
         </div>
         <button type="button" @click="openUserMenuModal = false" aria-label="Cerrar menú de usuario" class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold">✕</button>
       </div>
 
       <div class="space-y-2">
-        <label class="block text-xs font-bold text-gray-500">Cambiar de operador rápidamente:</label>
+        <label class="block text-xs font-bold text-gray-500">Cambiar de vendedor rápidamente:</label>
         <div class="space-y-1.5 max-h-48 overflow-y-auto">
           <button 
             v-for="u in staffUsers" 
@@ -1573,7 +1550,7 @@
             class="w-full flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:border-black text-left text-xs"
             :class="u.email === currentUser.email ? 'bg-gray-100 font-bold' : 'bg-white'"
           >
-            <span>{{ u.nombre }} ({{ u.role }})</span>
+            <span>{{ u.nombre }} ({{ getUserRoleLabel(u) }})</span>
             <span v-if="u.email === currentUser.email" class="text-xs">✓ Activo</span>
           </button>
         </div>
@@ -1804,10 +1781,10 @@ const SEED_PRODUCTOS = [
 
 // 3. Preloaded Staff Users
 const SEED_USERS = [
-  { email: 'melissa@campo.co', nombre: 'Melissa Restrepo', role: 'operativo' },
-  { email: 'jennifer@campo.co', nombre: 'Jennifer Gómez', role: 'operativo' },
-  { email: 'tatiana@campo.co', nombre: 'Tatiana Morales', role: 'operativo' },
-  { email: 'carlos@campo.co', nombre: 'Carlos Peñaloza', role: 'operativo' },
+  { email: 'melissa@campo.co', nombre: 'Melissa Restrepo', role: 'vendedora' },
+  { email: 'jennifer@campo.co', nombre: 'Jennifer Gómez', role: 'vendedora' },
+  { email: 'tatiana@campo.co', nombre: 'Tatiana Morales', role: 'vendedora' },
+  { email: 'carlos@campo.co', nombre: 'Carlos Peñaloza', role: 'vendedor' },
   { email: 'admin@campo.co', nombre: 'Administrador de Campo', role: 'admin' }
 ];
 
@@ -2135,7 +2112,18 @@ createApp({
     const loadFromLocalStorage = () => {
       try {
         const storedUsers = localStorage.getItem('rm_users');
-        staffUsers.value = storedUsers ? JSON.parse(storedUsers) : SEED_USERS;
+        if (storedUsers) {
+          const parsed = JSON.parse(storedUsers);
+          staffUsers.value = parsed.map(u => {
+            if (u.role === 'operativo' || !u.role) {
+              const n = (u.nombre || '').toLowerCase();
+              u.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
+            }
+            return u;
+          });
+        } else {
+          staffUsers.value = SEED_USERS;
+        }
 
         const storedComercios = localStorage.getItem('rm_comercios');
         comercios.value = storedComercios ? JSON.parse(storedComercios) : SEED_COMERCIOS;
@@ -2164,7 +2152,17 @@ createApp({
         pendingQueue.value = storedQueue ? JSON.parse(storedQueue) : [];
 
         const storedRecents = localStorage.getItem('rm_recent_visits');
-        recentVisitsByUser.value = storedRecents ? JSON.parse(storedRecents) : {};
+        if (storedRecents) {
+          const parsedRecents = JSON.parse(storedRecents);
+          Object.keys(parsedRecents).forEach(k => {
+            if (Array.isArray(parsedRecents[k]) && parsedRecents[k].length > 3) {
+              parsedRecents[k] = parsedRecents[k].slice(0, 3);
+            }
+          });
+          recentVisitsByUser.value = parsedRecents;
+        } else {
+          recentVisitsByUser.value = {};
+        }
 
         const storedWebhook = localStorage.getItem('rm_webhook_url');
         webhookUrl.value = storedWebhook || '';
@@ -2178,6 +2176,10 @@ createApp({
         const storedCurrent = localStorage.getItem('rm_current_user');
         if (storedCurrent) {
           currentUser.value = JSON.parse(storedCurrent);
+          if (currentUser.value && (currentUser.value.role === 'operativo' || !currentUser.value.role)) {
+            const n = (currentUser.value.nombre || '').toLowerCase();
+            currentUser.value.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
+          }
         }
       } catch (err) {
         console.error('Error cargando almacenamiento:', err);
@@ -2295,11 +2297,11 @@ createApp({
     };
 
     // -------------------------------------------------------------------
-    // STEP 1: BUSINESS SELECTION & RECENT VISITS
+    // STEP 1: BUSINESS SELECTION & RECENT VISITS (MÁXIMO 3 RECIENTES)
     // -------------------------------------------------------------------
     const isRecentlyVisited = (comercioId) => {
       if (!currentUser.value) return false;
-      const recents = recentVisitsByUser.value[currentUser.value.email] || [];
+      const recents = (recentVisitsByUser.value[currentUser.value.email] || []).slice(0, 3);
       return recents.includes(comercioId);
     };
 
@@ -2312,9 +2314,9 @@ createApp({
         list = list.filter(c => c.nombre.toLowerCase().includes(q));
       }
 
-      // Prioritize recently visited by current user
+      // Prioritize recently visited by current user (máximo 3)
       if (currentUser.value) {
-        const userRecents = recentVisitsByUser.value[currentUser.value.email] || [];
+        const userRecents = (recentVisitsByUser.value[currentUser.value.email] || []).slice(0, 3);
         list.sort((a, b) => {
           const aRecent = userRecents.indexOf(a.id);
           const bRecent = userRecents.indexOf(b.id);
@@ -2505,7 +2507,7 @@ createApp({
       // 1. Save locally in confirmed visits (unshifts for reverse chrono)
       visitas.value.unshift(newVisit);
 
-      // 2. Add to recent visits of current user
+      // 2. Add to recent visits of current user (máximo 3)
       if (!recentVisitsByUser.value[currentUser.value.email]) {
         recentVisitsByUser.value[currentUser.value.email] = [];
       }
@@ -2513,7 +2515,7 @@ createApp({
       const foundIdx = recents.indexOf(activeComercio.value.id);
       if (foundIdx !== -1) recents.splice(foundIdx, 1);
       recents.unshift(activeComercio.value.id);
-      if (recents.length > 5) recents.pop();
+      if (recents.length > 3) recents.length = 3;
 
       // 3. Add to pending queue for webhook sync
       pendingQueue.value.push(newVisit);
@@ -2841,9 +2843,26 @@ createApp({
       productModalOpen.value = false;
     };
 
-    // User Role Management
+    // User Role Management & Gendered Labels
+    const getUserRoleLabel = (user) => {
+      if (!user) return '';
+      if (user.role === 'admin') return 'Admin';
+      if (user.role === 'vendedora') return 'Vendedora';
+      if (user.role === 'vendedor') return 'Vendedor';
+      const n = (user.nombre || '').toLowerCase();
+      if (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) {
+        return 'Vendedora';
+      }
+      return 'Vendedor';
+    };
+
     const toggleUserRole = (u) => {
-      u.role = u.role === 'admin' ? 'operativo' : 'admin';
+      if (u.role === 'admin') {
+        const n = (u.nombre || '').toLowerCase();
+        u.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
+      } else {
+        u.role = 'admin';
+      }
       saveState();
     };
 
@@ -3073,6 +3092,7 @@ createApp({
 
       // Methods
       formatCOP,
+      getUserRoleLabel,
       loginQuick,
       loginManual,
       logout,
