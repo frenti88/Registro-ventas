@@ -307,18 +307,15 @@
             v-for="user in staffUsers" 
             :key="user.email"
             @click="loginQuick(user)"
-            class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-black bg-white hover:bg-gray-50 active-scale transition touch-target text-left"
+            class="w-full flex items-center justify-between p-3.5 rounded-xl border border-gray-200 hover:border-black bg-white hover:bg-gray-50 active-scale transition touch-target text-left"
           >
             <div class="flex items-center space-x-3">
               <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-black border border-gray-200">
                 {{ user.nombre.charAt(0) }}
               </div>
-              <div>
-                <p class="text-sm font-bold text-black">{{ user.nombre }}</p>
-                <p class="text-xs text-gray-500">{{ user.email }}</p>
-              </div>
+              <p class="text-sm font-bold text-black">{{ user.nombre.split(' ')[0] }}</p>
             </div>
-            <span class="text-xs font-semibold px-2 py-1 rounded-md" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'">
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-md" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'">
               {{ getUserRoleLabel(user) }}
             </span>
           </button>
@@ -1781,11 +1778,11 @@ const SEED_PRODUCTOS = [
 
 // 3. Preloaded Staff Users
 const SEED_USERS = [
-  { email: 'melissa@campo.co', nombre: 'Melissa Restrepo', role: 'vendedora' },
-  { email: 'jennifer@campo.co', nombre: 'Jennifer Gómez', role: 'vendedora' },
-  { email: 'tatiana@campo.co', nombre: 'Tatiana Morales', role: 'vendedora' },
-  { email: 'carlos@campo.co', nombre: 'Carlos Peñaloza', role: 'vendedor' },
-  { email: 'admin@campo.co', nombre: 'Administrador de Campo', role: 'admin' }
+  { email: 'melissa@campo.co', nombre: 'Melissa', role: 'vendedora' },
+  { email: 'jennifer@campo.co', nombre: 'Jennifer', role: 'vendedora' },
+  { email: 'tatiana@campo.co', nombre: 'Tatiana', role: 'vendedora' },
+  { email: 'carlos@campo.co', nombre: 'Carlos', role: 'vendedor' },
+  { email: 'admin@campo.co', nombre: 'Administrador', role: 'admin' }
 ];
 
 // Rotating emotional messages celebrating local entrepreneurs
@@ -2115,6 +2112,9 @@ createApp({
         if (storedUsers) {
           const parsed = JSON.parse(storedUsers);
           staffUsers.value = parsed.map(u => {
+            if (u.nombre && u.nombre.includes(' ')) {
+              u.nombre = u.nombre.split(' ')[0];
+            }
             if (u.role === 'operativo' || !u.role) {
               const n = (u.nombre || '').toLowerCase();
               u.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
@@ -2176,6 +2176,9 @@ createApp({
         const storedCurrent = localStorage.getItem('rm_current_user');
         if (storedCurrent) {
           currentUser.value = JSON.parse(storedCurrent);
+          if (currentUser.value && currentUser.value.nombre && currentUser.value.nombre.includes(' ')) {
+            currentUser.value.nombre = currentUser.value.nombre.split(' ')[0];
+          }
           if (currentUser.value && (currentUser.value.role === 'operativo' || !currentUser.value.role)) {
             const n = (currentUser.value.nombre || '').toLowerCase();
             currentUser.value.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
