@@ -2026,7 +2026,7 @@ createApp({
     const visitas = ref([]);
     const pendingQueue = ref([]);
     const recentVisitsByUser = ref({});
-    const webhookUrl = ref('');
+    const webhookUrl = ref('https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec');
 
     // Firestore Dual Persistence state
     const firestoreConfig = ref({
@@ -2165,7 +2165,7 @@ createApp({
         }
 
         const storedWebhook = localStorage.getItem('rm_webhook_url');
-        webhookUrl.value = storedWebhook || '';
+        webhookUrl.value = storedWebhook || 'https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec';
 
         const storedFirestore = localStorage.getItem('rm_firestore_config');
         if (storedFirestore) {
@@ -2560,7 +2560,7 @@ createApp({
         const response = await fetch(webhookUrl.value, {
           method: 'POST',
           mode: 'no-cors', // standard for Google Apps Script redirects
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
 
@@ -2987,7 +2987,7 @@ createApp({
         await fetch(webhookUrl.value, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'PING', timestamp: new Date().toISOString() }),
           signal: controller.signal
         });
