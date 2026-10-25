@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "skills": {
+    "pm-analytics": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/processes/analytics/SKILL.md",
+      "computedHash": "769716e481603eae8ade41d9cdb44e9547cdbaae783e41da2671fc4fb86b8177"
+    },
+    "pm-assumption-rigor-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/audits/assumption-rigor/SKILL.md",
+      "computedHash": "c52e30dd32701037418f27355ddf73a62f423fdb340c32556c5c23d819fa7fe8"
+    },
+    "pm-assumption-testing": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/processes/assumption-testing/SKILL.md",
+      "computedHash": "8381e9582805a707c6c91095c32f264207f906cbd8a9e531745d75fa2578db89"
+    },
+    "pm-competitive-analysis": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/competitive-analysis/SKILL.md",
+      "computedHash": "d1107c355f61762f4532b25ffd0ae41de030c7a42a9f316ffd888314f0cc21ff"
+    },
+    "pm-decision-quality-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/audits/decision-quality/SKILL.md",
+      "computedHash": "2b2619a9f1e15f048a3bd7e7d87687c6dd52838e601c4cd6e164b077586f83bf"
+    },
+    "pm-discovery": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/processes/discovery/SKILL.md",
+      "computedHash": "93685da2588511063d7ac314f77648ee01258be5e9c98d4c5e98b4d208de66d6"
+    },
+    "pm-experimentation-ab": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/processes/experimentation-ab/SKILL.md",
+      "computedHash": "39e0c8999ef4283098a2633a167ae95fe368aa6054ee3ca432c17683a1cc4c56"
+    },
+    "pm-gtm-plan": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/gtm-plan/SKILL.md",
+      "computedHash": "f33db7a8acf2452abaed1d94bdae285ab973a536e742b6bd3e73fa2a8aed1201"
+    },
+    "pm-idea-to-plan": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/workflows/idea-to-plan/SKILL.md",
+      "computedHash": "27376fb04ffce2dd5748f6fe0e1f69e300d0398ceb0d9ae7d1a482d71af93b37"
+    },
+    "pm-okr-metric-validity-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/audits/okr-metric-validity/SKILL.md",
+      "computedHash": "488e13db4b35e94c8b9bd7fdde008a743ab1f1501e181e0deaf94de201dde63e"
+    },
+    "pm-okrs-kpis": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/okrs-kpis/SKILL.md",
+      "computedHash": "13cea120739264e339a3d19beb7d54db2a260d42b72e61fbaddec53fa34c78f6"
+    },
+    "pm-personas-jtbd": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/foundations/personas-jtbd/SKILL.md",
+      "computedHash": "dbca842d7a634668bb20e62e4bc49e25a6ca06068f5fa5b4908970c5d4539fc8"
+    },
+    "pm-prioritization": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/processes/prioritization/SKILL.md",
+      "computedHash": "0476a025755600c6455f81b6931ce30928f7a64a1757432105cf64cccb7c8578"
+    },
+    "pm-prioritization-rigor-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/audits/prioritization-rigor/SKILL.md",
+      "computedHash": "5db34718411ad7e562a37dbbb78dc00db5b0ebeb9b016ebca5365031caa05d5b"
+    },
+    "pm-problem-statement": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/foundations/problem-statement/SKILL.md",
+      "computedHash": "ffaeb53cb00c1bb66cbad0b7233547ab3839c3c02af7a36089a6780a7bd4a72f"
+    },
+    "pm-product-review": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/workflows/product-review/SKILL.md",
+      "computedHash": "9250d81e34c74560a6bdc1433485f500142be4410b249cbfa894fc0132dbf176"
+    },
+    "pm-product-spec": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/product-spec/SKILL.md",
+      "computedHash": "df5a6f3c9fd87f26750f5ca8882fcec2cc95967bff45c3e401558b2226ae3408"
+    },
+    "pm-roadmap": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/roadmap/SKILL.md",
+      "computedHash": "65d2b1e9a86d7624034ae1b8282c69d6c6fb6d78a2d31e3712477cab1cc19b45"
+    },
+    "pm-spec-quality-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/audits/spec-quality/SKILL.md",
+      "computedHash": "adb4aecac0fa655bffc74b85eacefdf2c2877ff80407844240353dd8c7971245"
+    },
+    "pm-user-story": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/foundations/user-story/SKILL.md",
+      "computedHash": "0ee3862b343cac0d677d719ec1a4a768ef3759d30406f5493c46f4251558a6df"
+    },
+    "pm-vision-strategy": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "pm/deliverables/vision-strategy/SKILL.md",
+      "computedHash": "f4cc6f64a0ad2e2a1cc4fa0c258cf826615a60d50c35e6c83757509390d25c10"
+    },
+    "ux-accessibility-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/accessibility/SKILL.md",
+      "computedHash": "bd023276fbb162719eeb3c4c5109532ae6d72d91da71ac956a04f615c81c1f0d"
+    },
+    "ux-activity-feed": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/activity-feed/SKILL.md",
+      "computedHash": "d0002e4a8e63a62ed6b57fdf9636f37f3423facbe37f8642ca508063976fbaf0"
+    },
+    "ux-aesthetics-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/aesthetics/SKILL.md",
+      "computedHash": "b672cd11123010e8f414521ed692c8070d28eccf98b903a4d15eb557fae8d716"
+    },
+    "ux-buttons": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/buttons/SKILL.md",
+      "computedHash": "0876a4c82e10140f6cd2e2ba8f795c3a13413c5872ce06b1022eec0fcee3970d"
+    },
+    "ux-cards": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/cards/SKILL.md",
+      "computedHash": "91f617981fad6954ff48885f4c6e860171f80eacee53243ce46a53056b2094d0"
+    },
+    "ux-checkout-payment": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/flows/checkout-payment/SKILL.md",
+      "computedHash": "7754cccce2b1ca4d361a609eadcaeaef0baeab802ebe2c2ff7dca5e75da0876d"
+    },
+    "ux-color": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/foundations/color/SKILL.md",
+      "computedHash": "d4abef9c7d83a1fd149885bbceddeacf18353a9451af28289c9422b5b339d7cb"
+    },
+    "ux-contact-support": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/contact-support/SKILL.md",
+      "computedHash": "279a809ce00bf4ab45a036190e49d499d7eb028a15b7e92e0a60f1c1ab9d36f8"
+    },
+    "ux-dark-patterns-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/dark-patterns/SKILL.md",
+      "computedHash": "b28c7ebbbd57921898cb7c4aa934715cb886607c0e0c89032e737cf532d77106"
+    },
+    "ux-dashboard": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/dashboard/SKILL.md",
+      "computedHash": "4bf93a57b230f624c69af8540ea080be788690ae5ba039628aef5778fa6dab65"
+    },
+    "ux-design-from-scratch": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/workflows/design-from-scratch/SKILL.md",
+      "computedHash": "ae22c217062348f95dfa4dd46a817aa878561168edbff9d5356e13f232321194"
+    },
+    "ux-design-review": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/workflows/design-review/SKILL.md",
+      "computedHash": "16b69fd0d31d1941c27ff8aa647b3b388396bde9f6fd66a6911591aed6dfe889"
+    },
+    "ux-empty-states": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/empty-states/SKILL.md",
+      "computedHash": "82c55ab7d5d7622ff0d59e9ab36fd207325d54381526c5cac066ab338d046732"
+    },
+    "ux-error-recovery": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/flows/error-recovery/SKILL.md",
+      "computedHash": "9f77a4a6221646b77b2d498fe161a14732080dccd9a1686645042a3f1f3cde68"
+    },
+    "ux-heuristics-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/heuristics/SKILL.md",
+      "computedHash": "9168ac7e586dbcc4119ed43b183ec8bd88de3e820ff926a36b69239346164b9a"
+    },
+    "ux-iconography": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/foundations/iconography/SKILL.md",
+      "computedHash": "4cf09751c54973946933beed97d0608fd3497990bffb27401b6383e337e02b02"
+    },
+    "ux-information-architecture-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/information-architecture/SKILL.md",
+      "computedHash": "0be0cb1bbe3ca00676b087db822a9f483390b90c83d32066cb4e1c446580a0df"
+    },
+    "ux-inputs-and-forms": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/inputs-and-forms/SKILL.md",
+      "computedHash": "af498000a05fef5bf6f4dbcb83cd100209a12cfa5882886879a233c05696831d"
+    },
+    "ux-landing-page": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/landing-page/SKILL.md",
+      "computedHash": "916d495868b731fcd2f89c2b5a5266b6bae7dcc9c7e82f07bb85a4d98d1eb6d3"
+    },
+    "ux-layout-spacing-grids": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/foundations/layout-spacing-grids/SKILL.md",
+      "computedHash": "ffa9a9b8462bbf5336f4ad6c815119fc71b6384c5974017133f579db86feaeb7"
+    },
+    "ux-loaders-and-progress": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/loaders-and-progress/SKILL.md",
+      "computedHash": "d217cf5878fbc21d544a9c5afc3d547bd16bfb67bcb184852e9121efaee389c1"
+    },
+    "ux-login-signup": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/login-signup/SKILL.md",
+      "computedHash": "40e2251077028b3f877bebe2cb60265339dd6c2d1dd67c2375ae978b10026616"
+    },
+    "ux-menus": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/menus/SKILL.md",
+      "computedHash": "b7d97eefb8973746f5fef6847b242940e2484b0533d6d86078938c2af0a1fae6"
+    },
+    "ux-microcopy": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/foundations/microcopy/SKILL.md",
+      "computedHash": "980c00cfa403c47fb077ab6245a6401d1252593284b763013468369df79962be"
+    },
+    "ux-microcopy-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/microcopy/SKILL.md",
+      "computedHash": "f6da3a3b1615abb3bdbe7d106d4260fb17e77662fb5272a3bb78a49472d21fa9"
+    },
+    "ux-mobile-responsiveness-audit": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/audits/mobile-responsiveness/SKILL.md",
+      "computedHash": "425e367617b6092ed433304c9027d7a3a6dee6a32f9c8811a4c535cf1f253f6b"
+    },
+    "ux-modals-and-dialogs": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/modals-and-dialogs/SKILL.md",
+      "computedHash": "ab125e434b5b4c0a4a1013f1ad18c91c5a57fbeb09e032fc363edd6de8dd6c67"
+    },
+    "ux-navigation": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/navigation/SKILL.md",
+      "computedHash": "3d34423661440c03526ea78ade2bcdce3e81b497c465c98ce681d5aa832bf87e"
+    },
+    "ux-notifications-and-toasts": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/notifications-and-toasts/SKILL.md",
+      "computedHash": "86574eaa1d1419141173a03533b2fa6d63806912ac1f620c87a3e71ac752c114"
+    },
+    "ux-offboarding": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/flows/offboarding/SKILL.md",
+      "computedHash": "b2c7718cb8b35f791e617162ca9230e7057cfd07f236ebdcc02cf7972402df06"
+    },
+    "ux-onboarding": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/flows/onboarding/SKILL.md",
+      "computedHash": "94aeedbc8e5e2c401c85a43a59db89446adb51fea0282f8cf494b51c8561258f"
+    },
+    "ux-pricing": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/pricing/SKILL.md",
+      "computedHash": "f8e25f214e7427656af6666e22eab2ac530ce71fc1ab6c5d10b72b45d16b0ace"
+    },
+    "ux-search": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/search/SKILL.md",
+      "computedHash": "9918d81eaa3da51b81ac21986cd94c718ee42ce1f9793cdcd65657c0510d786a"
+    },
+    "ux-selection-controls": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/selection-controls/SKILL.md",
+      "computedHash": "4d9dc1fc01cda0167dc69ff0dd12de4c1a5e33c12265138353165c7070649bb9"
+    },
+    "ux-settings": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/screens/settings/SKILL.md",
+      "computedHash": "9c9e46c5be538c27a22d4975894801693a4d477c25c2656a8da11925c08bcaa3"
+    },
+    "ux-tables": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/tables/SKILL.md",
+      "computedHash": "92d4de539c6a0c1756bc6b3cad95bb01455485caa5f0d00c63948bc2035eb727"
+    },
+    "ux-tooltips": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/components/tooltips/SKILL.md",
+      "computedHash": "6042a64d7d5e684731fa7a3a298a051a33bd60fe4622acdaafe36360a6eb7677"
+    },
+    "ux-typography": {
+      "source": "Uxcel-Lab/product-skills",
+      "sourceType": "github",
+      "skillPath": "ux/foundations/typography/SKILL.md",
+      "computedHash": "a526f426e09fde1406f1009eb50a5cc282cfdb2c1af400f602fef2b75a427515"
+    }
+  }
+}

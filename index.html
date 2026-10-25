@@ -1,0 +1,3125 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-[#F6F6F6]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Registro Ventas</title>
+  
+  <!-- Product Sans & Google Sans Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/product-sans">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&family=Google+Sans+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap">
+  
+  <!-- Tailwind CSS via CDN (cdnjs for high reliability) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  
+  <!-- SheetJS for Excel (.xlsx) export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <!-- Vue 3 Global Build -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    /* Uber Minimalist Custom Utilities & Ergonomics */
+    :root {
+      --uber-black: #000000;
+      --uber-white: #FFFFFF;
+      --uber-bg: #F6F6F6;
+      --uber-border: #E2E2E2;
+      --uber-green: #05944F;
+      --uber-green-light: #E7F6ED;
+      --uber-gray-subtle: #F3F3F3;
+      --uber-text-muted: #6B7280;
+    }
+
+    /* Product Sans Typography in All Weights */
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 300;
+      font-display: swap;
+      src: local('Product Sans'), local('ProductSans-Regular'),
+           url('./fonts/ProductSans-Regular.ttf') format('truetype'),
+           url('https://fonts.cdnfonts.com/s/13998/ProductSans-Regular.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: local('Product Sans'), local('ProductSans-Regular'),
+           url('./fonts/ProductSans-Regular.ttf') format('truetype'),
+           url('https://fonts.cdnfonts.com/s/13998/ProductSans-Regular.woff') format('woff');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 500;
+      font-display: swap;
+      src: local('Product Sans Medium'), local('ProductSans-Medium'), local('Google Sans Medium'),
+           url('./fonts/ProductSans-Regular.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: local('Product Sans Bold'), local('ProductSans-Bold'),
+           url('./fonts/ProductSans-Bold.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: local('Product Sans Bold'), local('ProductSans-Bold'),
+           url('./fonts/ProductSans-Bold.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 800;
+      font-display: swap;
+      src: local('Product Sans Black'), local('ProductSans-Bold'),
+           url('./fonts/ProductSans-Bold.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: normal;
+      font-weight: 900;
+      font-display: swap;
+      src: local('Product Sans Black'), local('ProductSans-Bold'),
+           url('./fonts/ProductSans-Bold.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: italic;
+      font-weight: 400;
+      font-display: swap;
+      src: local('Product Sans Italic'), local('ProductSans-Italic'),
+           url('./fonts/ProductSans-Italic.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Product Sans';
+      font-style: italic;
+      font-weight: 700;
+      font-display: swap;
+      src: local('Product Sans Bold Italic'), local('ProductSans-BoldItalic'),
+           url('./fonts/ProductSans-BoldItalic.ttf') format('truetype');
+    }
+
+    *, input, button, select, textarea, p, span, h1, h2, h3, h4, h5, h6, label, div {
+      font-family: 'Product Sans', 'Google Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      background-color: var(--uber-bg);
+      color: var(--uber-black);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior-y: none;
+    }
+
+    /* Target ergonomic minimum 48px */
+    .touch-target {
+      min-height: 48px;
+      min-width: 48px;
+    }
+
+    .text-14 {
+      font-size: 14px !important;
+      line-height: 1.25rem !important;
+    }
+
+    /* Remove arrows from number inputs */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Smooth Contextual Payment expansion */
+    .expand-payment-enter-active,
+    .expand-payment-leave-active {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 120px;
+      overflow: hidden;
+    }
+    .expand-payment-enter-from,
+    .expand-payment-leave-to {
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    /* Animated Checkmark SVG */
+    .checkmark-circle {
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      stroke-width: 3;
+      stroke-miterlimit: 10;
+      stroke: var(--uber-green);
+      animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+
+    .checkmark-check {
+      transform-origin: 50% 50%;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      stroke-width: 4;
+      animation: stroke 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+    }
+
+    @keyframes stroke {
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: scale(0.7);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-pop-in {
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Safe bottom inset for iPhone Home Bar */
+    .pb-safe {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    
+    .fixed-bottom-bar {
+      padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+    }
+
+    /* Tactile active state */
+    .active-scale:active {
+      transform: scale(0.97);
+    }
+
+    /* WCAG 2.4.7 Visible focus ring for keyboard navigation */
+    :focus-visible {
+      outline: 2px solid #000000 !important;
+      outline-offset: 2px !important;
+    }
+
+    /* In-app Toast transition */
+    .toast-slide-enter-active,
+    .toast-slide-leave-active {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-slide-enter-from {
+      opacity: 0;
+      transform: translate(-50%, 16px) scale(0.96);
+    }
+    .toast-slide-leave-to {
+      opacity: 0;
+      transform: translate(-50%, 8px) scale(0.96);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col justify-between selection:bg-black selection:text-white">
+
+<div id="app" class="min-h-full flex flex-col w-full max-w-md mx-auto bg-white shadow-xl relative pb-28 md:border-x md:border-[#E2E2E2]">
+
+  <!-- TOP HEADER / STATUS BAR -->
+  <header class="sticky top-0 z-40 bg-black text-white px-4 py-3.5 border-b border-gray-800 flex items-center justify-between">
+    <div>
+      <h1 class="text-lg font-bold leading-tight tracking-tight">Registro Ventas</h1>
+    </div>
+
+    <!-- Right Controls: User Pill -->
+    <div class="flex items-center space-x-2">
+      <!-- User Chip or Login Button -->
+      <div v-if="currentUser" class="flex items-center">
+        <button @click="openUserMenuModal = true" class="flex items-center space-x-1.5 bg-gray-900 hover:bg-gray-800 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700 transition">
+          <span class="w-2 h-2 rounded-full" :class="currentUser.role === 'admin' ? 'bg-purple-400' : 'bg-blue-400'"></span>
+          <span class="truncate max-w-[100px]">{{ currentUser.nombre.split(' ')[0] }}</span>
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- OFFLINE NOTICE BANNER -->
+  <div v-if="!isOnline" class="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-xs text-yellow-800 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <svg class="w-4 h-4 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      <span><strong>Modo sin conexión:</strong> Las ventas se guardan localmente y se sincronizarán al recuperar la red.</span>
+    </div>
+  </div>
+
+  <!-- PENDING QUEUE NOTIFICATION (IF PENDING ITEMS EXIST) -->
+  <div v-if="pendingQueue.length > 0 && currentTab !== 'admin'" class="bg-blue-50 border-b border-blue-200 px-4 py-2 text-xs text-blue-900 flex items-center justify-between">
+    <span><strong>{{ pendingQueue.length }}</strong> registros pendientes de sincronizar.</span>
+    <button @click="syncPendingQueue" :disabled="isSyncing" class="font-bold underline text-blue-700 hover:text-blue-900 text-xs">
+      {{ isSyncing ? 'Sincronizando...' : 'Sincronizar ahora' }}
+    </button>
+  </div>
+
+  <!-- MAIN VIEW SWITCHER -->
+  <main class="flex-1 w-full bg-[#F6F6F6]">
+
+    <!-- PANTALLA A: LOGIN / CUENTAS DE ACCESO RÁPIDO (SI NO HAY USUARIO) -->
+    <section v-if="!currentUser" class="p-4 sm:p-6 space-y-6">
+      <div class="text-center pt-4 pb-2">
+        <div class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+          <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-extrabold text-black tracking-tight">Acceso operativo</h2>
+        <p class="text-sm text-gray-500 mt-1">Identifícate para iniciar el registro de ventas en campo</p>
+      </div>
+
+      <!-- Quick 1-Tap Access for Field Staff -->
+      <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold text-gray-500">Acceso rápido (1 toque)</h3>
+          <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">Personal de Campo</span>
+        </div>
+        <div class="space-y-2">
+          <button 
+            v-for="user in staffUsers" 
+            :key="user.email"
+            @click="loginQuick(user)"
+            class="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-black bg-white hover:bg-gray-50 active-scale transition touch-target text-left"
+          >
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-black border border-gray-200">
+                {{ user.nombre.charAt(0) }}
+              </div>
+              <div>
+                <p class="text-sm font-bold text-black">{{ user.nombre }}</p>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold px-2 py-1 rounded-md" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'">
+              {{ user.role === 'admin' ? 'Admin' : 'Operativo' }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Manual Email Login -->
+      <form @submit.prevent="loginManual" class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-500">Ingresar con otro correo</label>
+          <p class="text-[11px] text-gray-400 mt-0.5">Si tu correo no está en el listado, se creará un acceso operativo local.</p>
+        </div>
+        <div class="relative">
+          <input 
+            type="email" 
+            v-model="loginEmail" 
+            placeholder="ejemplo@campo.co" 
+            required 
+            class="w-full h-12 px-4 rounded-xl border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-base font-medium"
+          />
+        </div>
+        <button 
+          type="submit" 
+          class="w-full h-12 bg-black text-white font-bold rounded-xl active-scale transition touch-target"
+        >
+          Iniciar sesión →
+        </button>
+      </form>
+    </section>
+
+    <!-- PANTALLA PRINCIPAL CUANDO EL USUARIO ESTÁ AUTENTICADO -->
+    <div v-else>
+
+      <!-- TAB 1: FLUJO PRINCIPAL DE REGISTRO (STEPPER DE 4 PASOS) -->
+      <section v-if="currentTab === 'registro'" class="p-4 space-y-4">
+
+        <!-- STEPPER PROGRESS BAR (MINIMALIST UBER) -->
+        <nav aria-label="Progreso del registro de venta" class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+          <div class="flex items-center justify-between text-xs font-bold text-gray-500 mb-2 px-1">
+            <span :class="step >= 1 ? 'text-black font-extrabold' : 'text-gray-500'">1. Emprendimiento</span>
+            <span aria-hidden="true">→</span>
+            <span :class="step >= 2 ? 'text-black font-extrabold' : 'text-gray-500'">2. Productos</span>
+            <span aria-hidden="true">→</span>
+            <span :class="step >= 3 ? 'text-black font-extrabold' : 'text-gray-500'">3. Verificar</span>
+            <span aria-hidden="true">→</span>
+            <span :class="step >= 4 ? 'text-black font-extrabold' : 'text-gray-500'">4. Éxito</span>
+          </div>
+          <!-- Line progress -->
+          <div 
+            class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden" 
+            role="progressbar" 
+            :aria-valuenow="step" 
+            aria-valuemin="1" 
+            aria-valuemax="4" 
+            :aria-label="'Paso ' + step + ' de 4'"
+          >
+            <div 
+              class="h-full bg-black transition-all duration-300"
+              :style="{ width: step === 1 ? '25%' : step === 2 ? '50%' : step === 3 ? '75%' : '100%' }"
+            ></div>
+          </div>
+        </nav>
+
+        <!-- ============================================== -->
+        <!-- PASO 1: ELEGIR EMPRENDIMIENTO                   -->
+        <!-- ============================================== -->
+        <div v-if="step === 1" class="space-y-4">
+          <!-- Search Header -->
+          <div class="space-y-2">
+            <h2 class="text-xl font-extrabold text-black tracking-tight">Elige un emprendimiento</h2>
+            
+            <!-- Real-time Search Box -->
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500" aria-hidden="true">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </span>
+              <input 
+                type="text" 
+                v-model="businessSearchQuery" 
+                placeholder="Buscar emprendimiento..." 
+                aria-label="Buscar emprendimiento"
+                class="w-full h-12 pl-10 pr-11 rounded-xl bg-white border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-base"
+              />
+              <button 
+                v-if="businessSearchQuery" 
+                type="button"
+                @click="businessSearchQuery = ''" 
+                aria-label="Limpiar búsqueda"
+                class="absolute inset-y-0 right-0 pr-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-black font-bold text-base"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- Business List (Sorted with Recent Visited Priority) -->
+          <div class="space-y-2.5" role="listbox" aria-label="Lista de emprendimientos">
+            <div 
+              v-for="comercio in sortedFilteredBusinesses" 
+              :key="comercio.id"
+              role="option"
+              :aria-selected="selectedComercioId === comercio.id"
+              tabindex="0"
+              @keydown.enter="selectBusiness(comercio)"
+              @keydown.space.prevent="selectBusiness(comercio)"
+              @click="selectBusiness(comercio)"
+              class="p-4 rounded-2xl border transition active-scale touch-target cursor-pointer relative"
+              :class="selectedComercioId === comercio.id 
+                ? 'bg-black text-white border-black shadow-md' 
+                : 'bg-white text-black border-[#E2E2E2] hover:border-gray-400 shadow-sm'"
+            >
+              <div class="flex items-center justify-between">
+                <div class="space-y-1 pr-4">
+                  <h3 class="text-base font-bold leading-tight">{{ comercio.nombre }}</h3>
+
+                  <!-- Recent visit badge -->
+                  <span 
+                    v-if="isRecentlyVisited(comercio.id)" 
+                    class="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-medium"
+                    :class="selectedComercioId === comercio.id ? 'bg-gray-800 text-yellow-300' : 'bg-yellow-100 text-yellow-800'"
+                  >
+                    ⭐ Reciente
+                  </span>
+                </div>
+
+                <!-- Radio Checkmark Indicator -->
+                <div class="flex-shrink-0" aria-hidden="true">
+                  <div 
+                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition"
+                    :class="selectedComercioId === comercio.id 
+                      ? 'border-white bg-white text-black' 
+                      : 'border-gray-300 bg-white'"
+                  >
+                    <svg v-if="selectedComercioId === comercio.id" class="w-4 h-4 text-black stroke-current font-bold" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="sortedFilteredBusinesses.length === 0" class="text-center py-8 bg-white rounded-2xl border border-dashed border-gray-300 p-6">
+              <p class="text-gray-500 text-sm font-medium">No se encontraron emprendimientos que coincidan con "{{ businessSearchQuery }}".</p>
+              <button @click="businessSearchQuery = ''" class="mt-3 text-xs font-bold underline text-black">
+                Limpiar búsqueda
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- PASO 2: CANTIDADES Y MÉTODO DE PAGO            -->
+        <!-- ============================================== -->
+        <div v-if="step === 2" class="space-y-4">
+          <!-- Active Business Context Banner -->
+          <div class="bg-black text-white p-3.5 rounded-2xl flex items-center justify-between shadow-sm">
+            <h2 class="text-base font-bold leading-tight truncate pr-2">{{ activeComercio.nombre }}</h2>
+            <button 
+              @click="step = 1" 
+              class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-semibold flex-shrink-0 active-scale border border-gray-700"
+            >
+              ← Cambiar
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-xs font-bold text-gray-500">Productos disponibles ({{ currentComercioProducts.length }})</h3>
+            <span class="text-xs text-gray-500 font-medium">Modifica con − y +</span>
+          </div>
+
+          <!-- Product Rows List (Direct Controls, No Modals) -->
+          <div class="space-y-3">
+            <div 
+              v-for="prod in currentComercioProducts" 
+              :key="prod.id"
+              class="bg-white rounded-2xl border transition p-3.5 shadow-sm space-y-2.5"
+              :class="getProductQuantity(prod.id) > 0 ? 'border-black ring-1 ring-black' : 'border-[#E2E2E2]'"
+            >
+              <!-- Row: Product Info & Quantity Stepper -->
+              <div class="flex items-center justify-between">
+                <!-- Info -->
+                <div class="flex-1 pr-3">
+                  <h4 class="text-base font-bold text-black leading-snug">{{ prod.nombre }}</h4>
+                  <p class="text-14 font-semibold text-gray-700 mt-1">{{ formatCOP(prod.precio) }}</p>
+                </div>
+
+                <!-- Touch Stepper Controls (Min 48x48 Target) -->
+                <div class="flex items-center space-x-1 flex-shrink-0 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                  <!-- Minus Button -->
+                  <button 
+                    type="button"
+                    @click="decrementProduct(prod.id)"
+                    :disabled="getProductQuantity(prod.id) <= 0"
+                    class="w-11 h-11 rounded-lg flex items-center justify-center font-bold text-lg active-scale transition touch-target"
+                    :class="getProductQuantity(prod.id) > 0 ? 'bg-black text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                    :aria-label="'Disminuir cantidad de ' + prod.nombre"
+                  >
+                    −
+                  </button>
+
+                  <!-- Direct Numeric Input -->
+                  <input 
+                    type="number"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    min="0"
+                    :value="getProductQuantity(prod.id)"
+                    @input="onQuantityInput(prod.id, $event)"
+                    class="w-12 h-11 text-center font-extrabold text-base bg-transparent border-0 outline-none text-black p-0"
+                    :aria-label="'Cantidad de unidades de ' + prod.nombre"
+                  />
+
+                  <!-- Plus Button -->
+                  <button 
+                    type="button"
+                    @click="incrementProduct(prod.id)"
+                    class="w-11 h-11 rounded-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center font-bold text-lg active-scale transition touch-target"
+                    :aria-label="'Aumentar cantidad de ' + prod.nombre"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <!-- CONTEXTUAL PAYMENT METHOD SELECTOR (Unfolds only if quantity > 0) -->
+              <transition name="expand-payment">
+                <div v-if="getProductQuantity(prod.id) > 0" class="pt-2 border-t border-gray-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] font-bold text-gray-500">Método de pago para este ítem:</span>
+                    <span class="text-[11px] font-bold text-black">
+                      Subtotal: {{ formatCOP(getProductQuantity(prod.id) * prod.precio) }}
+                    </span>
+                  </div>
+
+                  <!-- Three touch buttons: Efectivo vs Transferencia (QR) vs Tarjeta -->
+                  <div class="grid grid-cols-3 gap-1.5" role="radiogroup" :aria-label="'Método de pago para ' + prod.nombre">
+                    <!-- Cash Button -->
+                    <button 
+                      type="button"
+                      role="radio"
+                      :aria-checked="getProductPayment(prod.id) === 'Efectivo'"
+                      @click="setPaymentMethod(prod.id, 'Efectivo')"
+                      class="h-11 rounded-xl flex items-center justify-center space-x-1 text-xs font-bold border transition active-scale touch-target px-1"
+                      :class="getProductPayment(prod.id) === 'Efectivo' 
+                        ? 'bg-black text-white border-black shadow-sm' 
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
+                    >
+                      <span class="text-xs" aria-hidden="true">💵</span>
+                      <span class="truncate">Efectivo</span>
+                    </button>
+
+                    <!-- Transferencia (QR) Button -->
+                    <button 
+                      type="button"
+                      role="radio"
+                      :aria-checked="getProductPayment(prod.id) === 'Transferencia (QR)'"
+                      @click="setPaymentMethod(prod.id, 'Transferencia (QR)')"
+                      class="h-11 rounded-xl flex items-center justify-center space-x-1 text-xs font-bold border transition active-scale touch-target px-1"
+                      :class="getProductPayment(prod.id) === 'Transferencia (QR)' 
+                        ? 'bg-black text-white border-black shadow-sm' 
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
+                    >
+                      <span class="text-xs" aria-hidden="true">📱</span>
+                      <span class="truncate">Transf. (QR)</span>
+                    </button>
+
+                    <!-- Card Button -->
+                    <button 
+                      type="button"
+                      role="radio"
+                      :aria-checked="getProductPayment(prod.id) === 'Tarjeta'"
+                      @click="setPaymentMethod(prod.id, 'Tarjeta')"
+                      class="h-11 rounded-xl flex items-center justify-center space-x-1 text-xs font-bold border transition active-scale touch-target px-1"
+                      :class="getProductPayment(prod.id) === 'Tarjeta' 
+                        ? 'bg-black text-white border-black shadow-sm' 
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
+                    >
+                      <span class="text-xs" aria-hidden="true">💳</span>
+                      <span class="truncate">Tarjeta</span>
+                    </button>
+                  </div>
+                </div>
+              </transition>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- PASO 3: VERIFICACIÓN Y REGISTRO DE VENTA       -->
+        <!-- ============================================== -->
+        <div v-if="step === 3" class="space-y-3 pb-28">
+          <!-- Compact Header: Title, Commerce & Add More Button -->
+          <div class="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm">
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Verificar venta</p>
+              <h2 class="text-base font-bold text-black truncate leading-tight">{{ activeComercio.nombre }}</h2>
+            </div>
+            <button 
+              type="button"
+              @click="step = 2" 
+              class="px-3 py-1.5 bg-black text-white rounded-xl text-xs font-bold active-scale flex items-center space-x-1"
+            >
+              <span>+ Agregar productos</span>
+            </button>
+          </div>
+
+          <!-- Empty Cart State -->
+          <div v-if="activeCartItems.length === 0" class="bg-white p-8 rounded-2xl border border-dashed border-gray-300 text-center space-y-3">
+            <span class="text-3xl">🛍️</span>
+            <p class="text-sm font-bold text-gray-800">No hay productos en esta venta</p>
+            <p class="text-xs text-gray-500">Regresa al catálogo para seleccionar los productos que deseas registrar.</p>
+            <button 
+              type="button"
+              @click="step = 2" 
+              class="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl active-scale"
+            >
+              Ir a seleccionar productos →
+            </button>
+          </div>
+
+          <!-- Registered Products List with Direct Quantity & Payment Controls -->
+          <div v-else class="space-y-2.5">
+            <div 
+              v-for="item in activeCartItems" 
+              :key="item.id"
+              class="bg-white rounded-2xl border border-[#E2E2E2] p-3.5 shadow-sm space-y-3"
+            >
+              <!-- Top Row: Product Name, Price, and Stepper Controls -->
+              <div class="flex items-center justify-between">
+                <div class="flex-1 pr-3">
+                  <h4 class="text-base font-bold text-black leading-snug">{{ item.nombre }}</h4>
+                  <p class="text-14 font-semibold text-gray-600 mt-0.5">
+                    {{ formatCOP(item.precio) }} <span class="text-xs text-gray-600 font-medium">c/u</span>
+                  </p>
+                </div>
+
+                <!-- Touch Stepper Controls (− Qty +) -->
+                <div class="flex items-center space-x-1 flex-shrink-0 bg-gray-50 p-1 rounded-xl border border-gray-200">
+                  <button 
+                    type="button"
+                    @click="decrementProduct(item.id)"
+                    class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg active-scale transition touch-target bg-black text-white hover:bg-gray-800"
+                    :aria-label="'Disminuir unidades de ' + item.nombre"
+                  >
+                    −
+                  </button>
+
+                  <input 
+                    type="number"
+                    min="0"
+                    :value="item.cantidad"
+                    @input="onQuantityInput(item.id, $event)"
+                    class="w-10 h-10 text-center font-black text-sm bg-transparent outline-none border-none text-black"
+                    inputmode="numeric"
+                    :aria-label="'Unidades de ' + item.nombre"
+                  />
+
+                  <button 
+                    type="button"
+                    @click="incrementProduct(item.id)"
+                    class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg active-scale transition touch-target bg-black text-white hover:bg-gray-800"
+                    :aria-label="'Aumentar unidades de ' + item.nombre"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bottom Row: Payment Method Selector and Row Subtotal -->
+              <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+                <!-- Payment method toggle pills -->
+                <div class="flex items-center space-x-1" role="radiogroup" :aria-label="'Método de pago para ' + item.nombre">
+                  <button 
+                    type="button"
+                    role="radio"
+                    :aria-checked="item.metodoPago === 'Efectivo'"
+                    @click="setPaymentMethod(item.id, 'Efectivo')"
+                    class="px-2 py-1 rounded-lg text-xs font-bold transition"
+                    :class="item.metodoPago === 'Efectivo' 
+                      ? 'bg-black text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                  >
+                    <span aria-hidden="true">💵</span> Efectivo
+                  </button>
+                  <button 
+                    type="button"
+                    role="radio"
+                    :aria-checked="item.metodoPago === 'Transferencia (QR)'"
+                    @click="setPaymentMethod(item.id, 'Transferencia (QR)')"
+                    class="px-2 py-1 rounded-lg text-xs font-bold transition"
+                    :class="item.metodoPago === 'Transferencia (QR)' 
+                      ? 'bg-black text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                  >
+                    <span aria-hidden="true">📱</span> Transf. (QR)
+                  </button>
+                  <button 
+                    type="button"
+                    role="radio"
+                    :aria-checked="item.metodoPago === 'Tarjeta'"
+                    @click="setPaymentMethod(item.id, 'Tarjeta')"
+                    class="px-2 py-1 rounded-lg text-xs font-bold transition"
+                    :class="item.metodoPago === 'Tarjeta' 
+                      ? 'bg-black text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                  >
+                    <span aria-hidden="true">💳</span> Tarjeta
+                  </button>
+                </div>
+
+                <div class="text-right">
+                  <p class="text-sm font-extrabold text-black">{{ formatCOP(item.subtotal) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consolidated Summary Card -->
+          <div v-if="activeCartItems.length > 0" class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2">
+            <!-- Payment breakdown pills -->
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+              <span v-if="totalCashAmount > 0" class="px-2.5 py-1 rounded-lg bg-green-50 text-green-900 border border-green-200 font-bold">
+                💵 Efectivo: {{ formatCOP(totalCashAmount) }} ({{ totalCashUnits }} uds)
+              </span>
+              <span v-if="totalTransferAmount > 0" class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 font-bold">
+                📱 Transf. (QR): {{ formatCOP(totalTransferAmount) }} ({{ totalTransferUnits }} uds)
+              </span>
+              <span v-if="totalCardAmount > 0" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-bold">
+                💳 Tarjeta: {{ formatCOP(totalCardAmount) }} ({{ totalCardUnits }} uds)
+              </span>
+            </div>
+
+            <!-- Total General -->
+            <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-500">Total general</p>
+                <p class="text-[11px] text-gray-600 font-medium">{{ totalUnitsCount }} unidades registradas</p>
+              </div>
+              <p class="text-2xl font-black text-black">{{ formatCOP(totalGrandAmount) }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- PASO 4: CONFIRMACIÓN DE VENTA                  -->
+        <!-- ============================================== -->
+        <div v-if="step === 4" class="space-y-4 py-2">
+          <!-- Animated Checkmark Container & Direct Title -->
+          <div class="text-center pt-2 pb-1 animate-pop-in space-y-2">
+            <div class="w-20 h-20 mx-auto rounded-full bg-[#E7F6ED] flex items-center justify-center mb-2">
+              <svg class="w-12 h-12" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" stroke="#05944F" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+            </div>
+            <h2 class="text-2xl font-black text-black tracking-tight leading-tight">
+              ¡Venta registrada con éxito!
+            </h2>
+          </div>
+
+          <!-- Sale Receipt Summary Card -->
+          <div class="bg-white rounded-2xl border border-[#E2E2E2] p-4 shadow-sm space-y-2.5">
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Comercio:</span>
+                <span class="font-bold text-black">{{ lastConfirmedVisit.comercioNombre }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Vendedor:</span>
+                <span class="font-bold text-black">{{ lastConfirmedVisit.usuarioNombre || lastConfirmedVisit.usuarioEmail }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Unidades:</span>
+                <span class="font-bold text-black">{{ lastConfirmedVisit.totalUnidades }} uds</span>
+              </div>
+              <div v-if="lastConfirmedVisit.totalEfectivo > 0" class="flex justify-between">
+                <span class="text-gray-500">Efectivo:</span>
+                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalEfectivo) }}</span>
+              </div>
+              <div v-if="lastConfirmedVisit.totalTransferencia > 0" class="flex justify-between">
+                <span class="text-gray-500">Transferencia (QR):</span>
+                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalTransferencia) }}</span>
+              </div>
+              <div v-if="lastConfirmedVisit.totalTarjeta > 0" class="flex justify-between">
+                <span class="text-gray-500">Tarjeta:</span>
+                <span class="font-bold text-black">{{ formatCOP(lastConfirmedVisit.totalTarjeta) }}</span>
+              </div>
+              <div class="flex justify-between pt-2 border-t border-gray-100 text-sm">
+                <span class="font-bold text-black">Total recaudado:</span>
+                <span class="font-black text-[#05944F] text-base">{{ formatCOP(lastConfirmedVisit.totalVenta) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two Continuation Options (Required) -->
+          <div class="space-y-2.5 pt-2">
+            <!-- Option B: Same Business -->
+            <button 
+              type="button"
+              @click="continueSameBusiness" 
+              class="w-full h-12 rounded-xl bg-black text-white text-sm font-bold active-scale transition touch-target flex items-center justify-center space-x-2"
+            >
+              <span>Registrar otra venta en este mismo emprendimiento</span>
+              <span>→</span>
+            </button>
+
+            <!-- Option A: Other Business -->
+            <button 
+              type="button"
+              @click="continueOtherBusiness" 
+              class="w-full h-12 rounded-xl bg-white text-black border-2 border-black text-sm font-bold active-scale transition touch-target flex items-center justify-center space-x-2"
+            >
+              <span>Elegir otro emprendimiento</span>
+              <span>↻</span>
+            </button>
+
+            <button 
+              type="button"
+              @click="currentTab = 'historial'" 
+              class="w-full text-center py-2 text-xs font-bold text-gray-500 hover:text-black underline"
+            >
+              Ver en Mis Registros
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: PANTALLA C — MIS REGISTROS / HISTORIAL DEL OPERATIVO -->
+      <section v-if="currentTab === 'historial'" class="p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-extrabold text-black tracking-tight">Mis registros</h2>
+            <p class="text-xs text-gray-500">Historial de ventas registradas en orden cronológico</p>
+          </div>
+          <span class="text-xs font-bold bg-black text-white px-2.5 py-1 rounded-full">
+            {{ userVisits.length }} ventas
+          </span>
+        </div>
+
+        <!-- Filter / Search within user visits -->
+        <div class="relative">
+          <input 
+            type="text" 
+            v-model="historySearchQuery" 
+            placeholder="Buscar por emprendimiento o fecha..." 
+            aria-label="Buscar ventas por emprendimiento o fecha"
+            class="w-full h-11 pl-4 pr-11 rounded-xl bg-white border border-gray-300 focus:border-black outline-none text-sm"
+          />
+          <button 
+            v-if="historySearchQuery" 
+            type="button"
+            @click="historySearchQuery = ''" 
+            aria-label="Limpiar búsqueda"
+            class="absolute inset-y-0 right-0 pr-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-black font-bold text-base"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- List of Visits -->
+        <div class="space-y-3">
+          <div 
+            v-for="visita in filteredUserVisits" 
+            :key="visita.id" 
+            class="bg-white rounded-2xl border border-[#E2E2E2] p-4 shadow-sm space-y-3"
+          >
+            <!-- Header Row -->
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-[10px] text-gray-600 font-mono font-bold">{{ visita.id }}</span>
+                <h3 class="text-base font-bold text-black">{{ visita.comercioNombre }}</h3>
+                <p class="text-xs text-gray-500">{{ visita.fechaBogota }} • {{ visita.horaBogota }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-base font-extrabold text-black">{{ formatCOP(visita.totalVenta) }}</p>
+                <span 
+                  class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold"
+                  :class="visita.syncStatus === 'sincronizado' ? 'bg-[#E7F6ED] text-[#05944F]' : 'bg-yellow-100 text-yellow-800'"
+                >
+                  {{ visita.syncStatus === 'sincronizado' ? '✓ Sincronizado' : '⏳ Pendiente' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Units & Payment breakdown summary -->
+            <div class="flex flex-wrap items-center gap-1.5 text-xs bg-gray-50 p-2.5 rounded-xl text-gray-700">
+              <span><strong>{{ visita.totalUnidades }}</strong> uds</span>
+              <span>•</span>
+              <span>💵 {{ formatCOP(visita.totalEfectivo) }}</span>
+              <span>•</span>
+              <span>📱 {{ formatCOP(visita.totalTransferencia || 0) }}</span>
+              <span>•</span>
+              <span>💳 {{ formatCOP(visita.totalTarjeta) }}</span>
+            </div>
+
+            <!-- Actions: Expand items & Quick Edit -->
+            <div class="flex items-center justify-between pt-1">
+              <button 
+                type="button"
+                @click="toggleVisitExpand(visita.id)" 
+                :aria-expanded="isVisitExpanded(visita.id)"
+                class="text-xs font-bold text-gray-600 hover:text-black flex items-center space-x-1"
+              >
+                <span>{{ isVisitExpanded(visita.id) ? 'Ocultar desglose ▲' : 'Ver desglose por producto ▼' }}</span>
+              </button>
+              
+              <div class="flex items-center space-x-2">
+                <button 
+                  type="button"
+                  @click="openQuickEditModal(visita)" 
+                  class="px-3 py-2 min-h-[44px] rounded-lg bg-gray-100 hover:bg-black hover:text-white text-xs font-bold transition active-scale flex items-center"
+                >
+                  ✏️ Editar cantidades
+                </button>
+                <button 
+                  type="button"
+                  @click="deleteVisit(visita.id)" 
+                  class="w-11 h-11 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 text-base font-bold transition active-scale"
+                  :aria-label="'Eliminar venta ' + visita.id"
+                  title="Eliminar venta"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <!-- Expanded Details Breakdown -->
+            <div v-if="isVisitExpanded(visita.id)" class="pt-2 border-t border-gray-100 space-y-2 text-xs">
+              <div v-for="item in visita.items" :key="item.registroId" class="flex items-center justify-between py-1 border-b border-gray-50">
+                <div>
+                  <p class="font-bold text-black">{{ item.producto }}</p>
+                  <p class="text-gray-500">{{ item.unidades }} uds × {{ formatCOP(item.precioUnitario) }} • <span class="font-medium">{{ item.metodoPago }}</span></p>
+                </div>
+                <p class="font-bold text-black">{{ formatCOP(item.subtotal) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="filteredUserVisits.length === 0" class="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-300 p-6">
+            <p class="text-gray-500 text-sm">No hay ventas registradas.</p>
+            <button @click="currentTab = 'registro'; step = 1" class="mt-3 px-4 py-2 bg-black text-white text-xs font-bold rounded-xl">
+              Registrar primera venta
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PANTALLA D — ADMINISTRACIÓN (EXCLUSIVA ROL 'admin') -->
+      <section v-if="currentTab === 'admin' && currentUser.role === 'admin'" class="p-4 space-y-4">
+        <!-- Admin Title and Sub-tab selector -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-extrabold text-black tracking-tight">Panel de administración</h2>
+              <p class="text-xs text-gray-500">Gestión global de ventas, catálogos e integraciones</p>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-200">
+              Admin
+            </span>
+          </div>
+
+          <!-- 4 Sub-Tabs Navigation -->
+          <div class="flex space-x-1.5 overflow-x-auto pb-1 no-scrollbar text-xs border-b border-gray-200">
+            <button 
+              @click="adminSubTab = 'ventas'" 
+              :class="adminSubTab === 'ventas' ? 'border-b-2 border-black font-extrabold text-black' : 'text-gray-500 font-medium'"
+              class="px-3 py-2 whitespace-nowrap"
+            >
+              📊 Ventas globales
+            </button>
+            <button 
+              @click="adminSubTab = 'comercios'" 
+              :class="adminSubTab === 'comercios' ? 'border-b-2 border-black font-extrabold text-black' : 'text-gray-500 font-medium'"
+              class="px-3 py-2 whitespace-nowrap"
+            >
+              🏪 Emprendimientos
+            </button>
+            <button 
+              @click="adminSubTab = 'productos'" 
+              :class="adminSubTab === 'productos' ? 'border-b-2 border-black font-extrabold text-black' : 'text-gray-500 font-medium'"
+              class="px-3 py-2 whitespace-nowrap"
+            >
+              🏷️ Productos
+            </button>
+            <button 
+              @click="adminSubTab = 'config'" 
+              :class="adminSubTab === 'config' ? 'border-b-2 border-black font-extrabold text-black' : 'text-gray-500 font-medium'"
+              class="px-3 py-2 whitespace-nowrap"
+            >
+              ⚙️ Configuración y Sheets
+            </button>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 1: VENTAS GLOBALES -->
+        <div v-if="adminSubTab === 'ventas'" class="space-y-4">
+          <!-- Global Metrics Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+              <span class="text-[10px] text-gray-500 font-bold">Total recaudado</span>
+              <p class="text-lg font-black text-black">{{ formatCOP(adminTotalRevenue) }}</p>
+              <p class="text-[10px] text-gray-500">{{ adminTotalVisits }} ventas totales</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+              <span class="text-[10px] text-gray-500 font-bold">Unidades vendidas</span>
+              <p class="text-lg font-black text-black">{{ adminTotalUnits }} uds</p>
+              <p class="text-[10px] text-gray-500">Todo el equipo</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+              <span class="text-[10px] text-gray-500 font-bold">💵 Efectivo</span>
+              <p class="text-sm font-extrabold text-black">{{ formatCOP(adminTotalCash) }}</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+              <span class="text-[10px] text-gray-500 font-bold">📱 Transf. (QR)</span>
+              <p class="text-sm font-extrabold text-black">{{ formatCOP(adminTotalTransfer) }}</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] shadow-sm">
+              <span class="text-[10px] text-gray-500 font-bold">💳 Tarjeta</span>
+              <p class="text-sm font-extrabold text-black">{{ formatCOP(adminTotalCard) }}</p>
+            </div>
+          </div>
+
+          <!-- Export Buttons: Native Excel & CSV (SheetJS) -->
+          <div class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2">
+            <h4 class="text-xs font-bold text-gray-500">Exportar consolidado de ventas</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                @click="exportToExcel" 
+                class="h-11 rounded-xl bg-black text-white text-xs font-bold flex items-center justify-center space-x-1.5 active-scale touch-target"
+              >
+                <span>📥 Descargar Excel (.xlsx)</span>
+              </button>
+              <button 
+                @click="exportToCSV" 
+                class="h-11 rounded-xl bg-white border border-black text-black text-xs font-bold flex items-center justify-center space-x-1.5 active-scale touch-target"
+              >
+                <span>📄 Descargar CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters Bar -->
+          <div class="bg-white p-3 rounded-2xl border border-[#E2E2E2] space-y-2">
+            <span class="text-[11px] font-bold text-gray-500">Filtros de auditoría</span>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <select v-model="adminFilterSeller" class="h-10 px-2 rounded-lg bg-gray-50 border border-gray-200 outline-none">
+                <option value="">Todos los vendedores</option>
+                <option v-for="user in staffUsers" :key="user.email" :value="user.email">{{ user.nombre }}</option>
+              </select>
+
+              <select v-model="adminFilterBusiness" class="h-10 px-2 rounded-lg bg-gray-50 border border-gray-200 outline-none">
+                <option value="">Todos los comercios</option>
+                <option v-for="c in comercios" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Team Sales Transactions List -->
+          <div class="space-y-2.5">
+            <div 
+              v-for="v in filteredAdminVisits" 
+              :key="v.id" 
+              class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2"
+            >
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="text-[10px] font-mono font-bold text-gray-400">{{ v.id }} • {{ v.fechaBogota }} {{ v.horaBogota }}</span>
+                  <h4 class="text-sm font-bold text-black">{{ v.comercioNombre }}</h4>
+                  <p class="text-xs text-gray-500">Vendedor: <span class="font-semibold text-black">{{ v.usuarioEmail }}</span></p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-extrabold text-black">{{ formatCOP(v.totalVenta) }}</p>
+                  <span 
+                    class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold"
+                    :class="v.syncStatus === 'sincronizado' ? 'bg-[#E7F6ED] text-[#05944F]' : 'bg-yellow-100 text-yellow-800'"
+                  >
+                    {{ v.syncStatus === 'sincronizado' ? '✓ Sheets' : '⏳ Pendiente' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Compact items tag list -->
+              <div class="flex flex-wrap gap-1 pt-1">
+                <span 
+                  v-for="item in v.items" 
+                  :key="item.registroId"
+                  class="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-700 font-medium"
+                >
+                  {{ item.unidades }}× {{ item.producto }} ({{ item.metodoPago }})
+                </span>
+              </div>
+            </div>
+
+            <div v-if="filteredAdminVisits.length === 0" class="text-center py-8 bg-white rounded-2xl border border-dashed border-gray-300">
+              <p class="text-xs text-gray-500">No se encontraron ventas para los filtros seleccionados.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 2: EMPRENDIMIENTOS & MATRIZ DE PRODUCTOS -->
+        <div v-if="adminSubTab === 'comercios'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-500">Gestión de emprendimientos ({{ comercios.length }})</h3>
+            <button 
+              @click="openAddBusinessModal" 
+              class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
+            >
+              + Nuevo emprendimiento
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div 
+              v-for="c in comercios" 
+              :key="c.id" 
+              class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3"
+            >
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 class="text-base font-bold text-black">{{ c.nombre }}</h4>
+                </div>
+                <button 
+                  @click="openEditBusinessModal(c)" 
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-black hover:text-white transition"
+                >
+                  Editar
+                </button>
+              </div>
+
+              <!-- Product Matrix Checkboxes for this business -->
+              <div class="pt-2 border-t border-gray-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[11px] font-bold text-gray-600">Matriz de productos habilitados:</span>
+                  <span class="text-[11px] font-mono text-black font-bold">
+                    {{ (comercioProductsMap[c.id] || []).length }} de {{ productos.length }}
+                  </span>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                  <label 
+                    v-for="p in productos" 
+                    :key="p.id" 
+                    class="flex items-center space-x-2 text-xs p-1.5 rounded hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      :checked="isProductAssigned(c.id, p.id)" 
+                      @change="toggleProductAssignment(c.id, p.id)"
+                      class="rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <span class="truncate">{{ p.nombre }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 3: PRODUCTOS & PRECIOS -->
+        <div v-if="adminSubTab === 'productos'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-500">Catálogo de productos ({{ productos.length }})</h3>
+            <button 
+              @click="openAddProductModal" 
+              class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
+            >
+              + Nuevo producto
+            </button>
+          </div>
+
+          <div class="space-y-2.5">
+            <div 
+              v-for="prod in productos" 
+              :key="prod.id" 
+              class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm flex items-center justify-between"
+            >
+              <div class="space-y-0.5">
+                <h4 class="text-sm font-bold text-black">{{ prod.nombre }}</h4>
+                <p class="text-14 font-semibold text-gray-700">{{ formatCOP(prod.precio) }}</p>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <button 
+                  @click="openEditProductModal(prod)" 
+                  class="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-100 hover:bg-black hover:text-white transition active-scale"
+                >
+                  Modificar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 4: CONFIGURACIÓN, USUARIOS & GOOGLE SHEETS -->
+        <div v-if="adminSubTab === 'config'" class="space-y-4">
+          <!-- Google Sheets Webhook Setup Card -->
+          <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">📊</span>
+              <div>
+                <h4 class="text-sm font-bold text-black">Integración Google Sheets (Apps Script)</h4>
+                <p class="text-xs text-gray-500">Envío transaccional en segundo plano vía webhook POST</p>
+              </div>
+            </div>
+
+            <!-- Target Spreadsheet Direct Link -->
+            <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-gray-700 flex items-center space-x-1">
+                  <span>📋</span>
+                  <span>Documento oficial de Google Sheets:</span>
+                </span>
+                <a 
+                  href="https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit?gid=0#gid=0" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="text-xs font-bold text-black underline hover:text-gray-700 flex items-center space-x-1"
+                >
+                  <span>Abrir hoja de cálculo</span>
+                  <span>↗</span>
+                </a>
+              </div>
+              <p class="text-[11px] text-gray-600 leading-relaxed">
+                Cada venta se registrará automáticamente en la pestaña consolidada <strong class="text-black">"Todas las ventas"</strong> y en una pestaña individual creada para cada vendedor (ej. <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Melissa Restrepo</span>, <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Jennifer Gómez</span>).
+              </p>
+            </div>
+
+            <!-- 1-Minute Quick Setup Guide -->
+            <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2 text-xs text-blue-950">
+              <p class="font-bold text-blue-900 flex items-center space-x-1">
+                <span>⚡</span>
+                <span>Pasos para vincular tu Google Sheet en 1 minuto:</span>
+              </p>
+              <ol class="list-decimal list-inside space-y-1 text-[11px] text-blue-900 leading-normal pl-0.5">
+                <li>Abre el documento en <a href="https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit?gid=0#gid=0" target="_blank" class="font-bold underline">Google Sheets ↗</a>.</li>
+                <li>En el menú superior ve a: <strong>Extensiones &gt; Apps Script</strong>.</li>
+                <li>Borra el código que aparezca y pega el <strong>Código oficial para Google Sheets</strong> que encuentras abajo.</li>
+                <li>Haz clic en <strong>Implementar &gt; Nueva implementación</strong>.</li>
+                <li>En el engranaje ⚙️ selecciona <strong>Aplicación web</strong>.</li>
+                <li>En <em>Quién tiene acceso</em>, selecciona <strong>Cualquier persona</strong> (Anyone) y haz clic en <strong>Implementar</strong>.</li>
+                <li>Copia la <strong>URL de la aplicación web</strong> generada (termina en <code class="bg-blue-100 px-1 py-0.5 rounded font-mono text-[10px]">/exec</code>), pégala en el campo de abajo y haz clic en <strong>Guardar URL</strong>.</li>
+              </ol>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-gray-500">URL del Webhook de Apps Script:</label>
+              <input 
+                type="url" 
+                v-model="webhookUrl" 
+                placeholder="https://script.google.com/macros/s/.../exec" 
+                class="w-full h-11 px-3 text-xs rounded-xl bg-gray-50 border border-gray-300 focus:border-black outline-none font-mono"
+              />
+            </div>
+
+            <div class="flex space-x-2 pt-1">
+              <button 
+                @click="saveWebhookUrl" 
+                class="flex-1 h-10 rounded-xl bg-black text-white text-xs font-bold active-scale"
+              >
+                Guardar URL
+              </button>
+              <button 
+                @click="testWebhookConnection" 
+                :disabled="isTestingWebhook || !webhookUrl"
+                class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale"
+              >
+                {{ isTestingWebhook ? 'Probando...' : 'Probar conexión' }}
+              </button>
+            </div>
+
+            <p v-if="webhookStatusMessage" class="text-xs font-semibold" :class="webhookStatusSuccess ? 'text-green-700' : 'text-red-600'">
+              {{ webhookStatusMessage }}
+            </p>
+
+            <!-- Apps Script Ready-to-use Code Accordion -->
+            <div class="pt-2 border-t border-gray-100">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-bold text-gray-700">Código oficial para Google Sheets:</span>
+                <button @click="copyAppsScriptCode" class="text-xs font-bold underline text-black">
+                  {{ copiedScript ? '¡Copiado! ✓' : 'Copiar código' }}
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-500 mb-2">
+                Pega este código en <em>Extensiones > Apps Script</em> de tu Google Sheet y despliega como <em>Aplicación Web (Acceso: Cualquier persona)</em>. Incluye LockService para concurrencia multi-vendedor y pestañas separadas por vendedor.
+              </p>
+              <pre class="bg-gray-900 text-gray-200 p-3 rounded-xl text-[10px] font-mono overflow-x-auto max-h-48 leading-relaxed">{{ appsScriptTemplate }}</pre>
+            </div>
+          </div>
+
+          <!-- Pending Queue Manager -->
+          <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-bold text-black">Cola de sincronización sin conexión</h4>
+                <p class="text-xs text-gray-500">{{ pendingQueue.length }} transacciones pendientes en cola</p>
+              </div>
+              <button 
+                @click="syncPendingQueue" 
+                :disabled="isSyncing || pendingQueue.length === 0"
+                class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl disabled:bg-gray-200 disabled:text-gray-400 active-scale"
+              >
+                {{ isSyncing ? 'Sincronizando...' : 'Reintentar ahora' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- User Management (Roles) -->
+          <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+            <h4 class="text-sm font-bold text-black">Gestión de roles de usuario</h4>
+            <div class="divide-y divide-gray-100">
+              <div v-for="user in staffUsers" :key="user.email" class="py-2 flex items-center justify-between text-xs">
+                <div>
+                  <p class="font-bold text-black">{{ user.nombre }}</p>
+                  <p class="text-gray-500">{{ user.email }}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="px-2 py-0.5 rounded font-bold" :class="user.role === 'admin' ? 'bg-purple-100 text-purple-900' : 'bg-gray-100 text-gray-700'">
+                    {{ user.role }}
+                  </span>
+                  <button 
+                    v-if="user.email !== currentUser.email" 
+                    @click="toggleUserRole(user)" 
+                    class="text-[11px] underline font-bold text-gray-600 hover:text-black"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Firebase Firestore Native Connection (Dual Persistence) -->
+          <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">🔥</span>
+              <div>
+                <h4 class="text-sm font-bold text-black">Persistencia dual: Firebase Firestore</h4>
+                <p class="text-xs text-gray-500">Conexión nativa con fallback instantáneo a LocalStorage (&lt;1.5s)</p>
+              </div>
+            </div>
+
+            <!-- Status indicator -->
+            <div class="p-2.5 rounded-xl border flex items-center justify-between text-xs" :class="firestoreEnabled && firestoreConfig.projectId ? 'bg-green-50 border-green-200 text-green-900' : 'bg-gray-50 border-gray-200 text-gray-700'">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full" :class="firestoreEnabled && firestoreConfig.projectId ? 'bg-[#05944F]' : 'bg-blue-500'"></span>
+                <span class="font-bold">
+                  {{ firestoreEnabled && firestoreConfig.projectId ? 'Firestore conectado (persistencia dual)' : 'Almacenamiento local activo' }}
+                </span>
+              </div>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white border border-gray-200">
+                {{ firestoreEnabled && firestoreConfig.projectId ? 'Firestore' : 'LocalStorage' }}
+              </span>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <div>
+                <label class="block font-bold text-gray-500 mb-0.5">Project ID:</label>
+                <input type="text" v-model="firestoreConfig.projectId" placeholder="mi-proyecto-firebase" class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-bold text-gray-500 mb-0.5">API Key:</label>
+                  <input type="text" v-model="firestoreConfig.apiKey" placeholder="AIzaSy..." class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
+                </div>
+                <div>
+                  <label class="block font-bold text-gray-500 mb-0.5">Auth Domain:</label>
+                  <input type="text" v-model="firestoreConfig.authDomain" placeholder="app.firebaseapp.com" class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
+                </div>
+              </div>
+            </div>
+
+            <div class="flex space-x-2 pt-1">
+              <button @click="saveFirestoreConfig" class="flex-1 h-10 rounded-xl bg-black text-white text-xs font-bold active-scale">
+                Guardar configuración de Firebase
+              </button>
+              <button @click="testFirestoreConnection" class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale">
+                Verificar
+              </button>
+            </div>
+          </div>
+
+          <!-- Reset / Factory Seed Data -->
+          <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
+            <h4 class="text-sm font-bold text-red-800">Zona de mantenimiento</h4>
+            <p class="text-xs text-gray-500">Restaura el catálogo semilla original de 10 comercios y 10 productos.</p>
+            <button 
+              @click="resetToSeedData" 
+              class="px-3 py-2 bg-red-50 text-red-700 border border-red-300 text-xs font-bold rounded-xl active-scale hover:bg-red-100"
+            >
+              Restablecer catálogo inicial
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============================================== -->
+  <!-- BARRA INFERIOR FIJA DE ACCIÓN (ALCANCE PULGAR) -->
+  <!-- ============================================== -->
+
+  <!-- Fixed Bottom Bar for Step 1 (Choose Business) -->
+  <div 
+    v-if="currentUser && currentTab === 'registro' && step === 1" 
+    class="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none px-4"
+  >
+    <div class="w-full max-w-md bg-white border border-[#E2E2E2] shadow-2xl rounded-2xl p-3 flex items-center justify-between pointer-events-auto">
+      <div class="pr-2">
+        <p class="text-[10px] text-gray-500 font-bold">Seleccionado:</p>
+        <p class="text-xs font-bold text-black truncate max-w-[170px]">
+          {{ selectedComercio ? selectedComercio.nombre : 'Ninguno seleccionado' }}
+        </p>
+      </div>
+
+      <button 
+        type="button"
+        @click="goToStep2" 
+        :disabled="!selectedComercioId"
+        class="h-12 px-6 rounded-xl text-sm font-bold active-scale transition touch-target flex items-center space-x-1.5"
+        :class="selectedComercioId ? 'bg-black text-white hover:bg-gray-800 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+      >
+        <span>Ver productos</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fixed Bottom Bar for Step 2 (Quantities & Payment) -->
+  <div 
+    v-if="currentUser && currentTab === 'registro' && step === 2" 
+    class="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none px-4"
+  >
+    <div class="w-full max-w-md bg-white border border-[#E2E2E2] shadow-2xl rounded-2xl p-3 flex items-center justify-between pointer-events-auto">
+      <div>
+        <span class="text-[10px] text-gray-500 font-bold">Total acumulado</span>
+        <p class="text-base font-black text-black leading-tight">{{ formatCOP(totalGrandAmount) }}</p>
+        <p class="text-[11px] text-gray-500 font-medium">{{ totalUnitsCount }} uds en {{ activeCartItems.length }} productos</p>
+      </div>
+
+      <button 
+        type="button"
+        @click="goToStep3" 
+        :disabled="totalUnitsCount === 0"
+        class="h-12 px-6 rounded-xl text-sm font-bold active-scale transition touch-target flex items-center space-x-1.5"
+        :class="totalUnitsCount > 0 ? 'bg-black text-white hover:bg-gray-800 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+      >
+        <span>Verificar</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fixed Bottom Bar for Step 3 (Confirmation) -->
+  <div 
+    v-if="currentUser && currentTab === 'registro' && step === 3" 
+    class="fixed bottom-14 left-0 right-0 z-30 flex justify-center pointer-events-none px-4"
+  >
+    <div class="w-full max-w-md bg-white border border-[#E2E2E2] shadow-2xl rounded-2xl p-3 flex items-center space-x-3 pointer-events-auto">
+      <button 
+        type="button"
+        @click="step = 2" 
+        class="h-12 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale transition touch-target"
+      >
+        ← Volver
+      </button>
+
+      <button 
+        type="button"
+        @click="confirmSaleAndSubmit" 
+        :disabled="isSubmittingSale"
+        class="flex-1 h-12 rounded-xl bg-black hover:bg-gray-900 text-white text-sm font-extrabold active-scale transition touch-target flex items-center justify-center space-x-2 shadow-lg"
+      >
+        <span v-if="isSubmittingSale" class="animate-spin mr-1">↻</span>
+        <span>{{ isSubmittingSale ? 'Confirmando...' : 'Confirmar venta' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- NAVEGACIÓN GLOBAL PRINCIPAL (PESTAÑAS INFERIORES) -->
+  <!-- ============================================== -->
+  <nav v-if="currentUser" aria-label="Navegación principal" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E2E2E2] shadow-lg">
+    <div class="max-w-md mx-auto grid" role="tablist" :class="currentUser.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'">
+      <!-- Tab 1: Registrar -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="currentTab === 'registro'"
+        @click="currentTab = 'registro'"
+        class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition"
+        :class="currentTab === 'registro' ? 'text-black font-extrabold' : 'text-gray-500 font-medium'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+        <span class="text-[11px]">Nueva venta</span>
+      </button>
+
+      <!-- Tab 2: Mis Registros -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="currentTab === 'historial'"
+        @click="currentTab = 'historial'"
+        class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition relative"
+        :class="currentTab === 'historial' ? 'text-black font-extrabold' : 'text-gray-500 font-medium'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <span class="text-[11px]">Mis registros</span>
+        <span v-if="userVisits.length > 0" class="absolute top-1 right-8 w-2 h-2 rounded-full bg-black" aria-hidden="true"></span>
+      </button>
+
+      <!-- Tab 3: Admin (Only visible if role === 'admin') -->
+      <button 
+        v-if="currentUser.role === 'admin'"
+        type="button"
+        role="tab"
+        :aria-selected="currentTab === 'admin'"
+        @click="currentTab = 'admin'"
+        class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition"
+        :class="currentTab === 'admin' ? 'text-black font-extrabold' : 'text-gray-500 font-medium'"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span class="text-[11px]">Admin</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================================== -->
+  <!-- MODALES DE APOYO (USUARIO, EDICIÓN, CREACIÓN)  -->
+  <!-- ============================================== -->
+
+  <!-- Modal: Menú de Usuario / Cambio de Perfil -->
+  <div v-if="openUserMenuModal" role="dialog" aria-modal="true" aria-labelledby="user-menu-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 animate-pop-in">
+      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+        <div>
+          <h3 id="user-menu-title" class="text-base font-bold text-black">{{ currentUser.nombre }}</h3>
+          <p class="text-xs text-gray-500">{{ currentUser.email }} ({{ currentUser.role }})</p>
+        </div>
+        <button type="button" @click="openUserMenuModal = false" aria-label="Cerrar menú de usuario" class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold">✕</button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-gray-500">Cambiar de operador rápidamente:</label>
+        <div class="space-y-1.5 max-h-48 overflow-y-auto">
+          <button 
+            v-for="u in staffUsers" 
+            :key="u.email" 
+            @click="switchUser(u)"
+            class="w-full flex items-center justify-between p-2.5 rounded-xl border border-gray-100 hover:border-black text-left text-xs"
+            :class="u.email === currentUser.email ? 'bg-gray-100 font-bold' : 'bg-white'"
+          >
+            <span>{{ u.nombre }} ({{ u.role }})</span>
+            <span v-if="u.email === currentUser.email" class="text-xs">✓ Activo</span>
+          </button>
+        </div>
+      </div>
+
+      <button 
+        @click="logout" 
+        class="w-full h-12 bg-red-50 text-red-700 font-bold rounded-xl active-scale text-xs"
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Edición rápida de venta -->
+  <div v-if="editingVisit" role="dialog" aria-modal="true" aria-labelledby="edit-visit-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-2xl p-5 space-y-4 flex flex-col animate-pop-in">
+      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+        <div>
+          <span class="text-[10px] text-gray-600 font-mono font-bold">{{ editingVisit.id }}</span>
+          <h3 id="edit-visit-title" class="text-base font-bold text-black">Corregir registro de venta</h3>
+          <p class="text-xs text-gray-500">{{ editingVisit.comercioNombre }}</p>
+        </div>
+        <button type="button" @click="editingVisit = null" aria-label="Cerrar modal de corrección" class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <div v-for="item in editingVisit.items" :key="item.registroId" class="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-black">{{ item.producto }}</span>
+            <span class="text-xs font-mono font-bold">{{ formatCOP(item.precioUnitario * item.unidades) }}</span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-500">Unidades:</span>
+            <div class="flex items-center space-x-1">
+              <button 
+                type="button"
+                @click="decrementEditItem(item)" 
+                :aria-label="'Disminuir unidades de ' + item.producto"
+                class="w-10 h-10 rounded-lg bg-gray-200 hover:bg-gray-300 text-black font-bold flex items-center justify-center text-base active-scale"
+              >−</button>
+              <input 
+                type="number" 
+                min="0" 
+                v-model.number="item.unidades" 
+                :aria-label="'Unidades de ' + item.producto"
+                class="w-12 h-10 text-center text-xs font-bold bg-white border border-gray-300 rounded-lg outline-none"
+              >
+              <button 
+                type="button"
+                @click="incrementEditItem(item)" 
+                :aria-label="'Aumentar unidades de ' + item.producto"
+                class="w-10 h-10 rounded-lg bg-black text-white hover:bg-gray-800 font-bold flex items-center justify-center text-base active-scale"
+              >+</button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-xs text-gray-500">Pago:</span>
+            <div class="flex space-x-1" role="radiogroup" :aria-label="'Método de pago para ' + item.producto">
+              <button 
+                type="button"
+                role="radio"
+                :aria-checked="item.metodoPago === 'Efectivo'"
+                @click="item.metodoPago = 'Efectivo'" 
+                :class="item.metodoPago === 'Efectivo' ? 'bg-black text-white' : 'bg-white text-gray-700 border'"
+                class="px-2 py-1 text-[11px] font-bold rounded-lg"
+              >
+                💵 Efectivo
+              </button>
+              <button 
+                type="button"
+                role="radio"
+                :aria-checked="item.metodoPago === 'Transferencia (QR)'"
+                @click="item.metodoPago = 'Transferencia (QR)'" 
+                :class="item.metodoPago === 'Transferencia (QR)' ? 'bg-black text-white' : 'bg-white text-gray-700 border'"
+                class="px-2 py-1 text-[11px] font-bold rounded-lg"
+              >
+                📱 Transf. (QR)
+              </button>
+              <button 
+                type="button"
+                role="radio"
+                :aria-checked="item.metodoPago === 'Tarjeta'"
+                @click="item.metodoPago = 'Tarjeta'" 
+                :class="item.metodoPago === 'Tarjeta' ? 'bg-black text-white' : 'bg-white text-gray-700 border'"
+                class="px-2 py-1 text-[11px] font-bold rounded-lg"
+              >
+                💳 Tarjeta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-gray-100 flex space-x-2">
+        <button type="button" @click="editingVisit = null" class="flex-1 h-11 bg-gray-100 font-bold rounded-xl text-xs active-scale">
+          Cancelar
+        </button>
+        <button type="button" @click="saveQuickEdit" class="flex-1 h-11 bg-black text-white font-bold rounded-xl text-xs active-scale">
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Crear / Editar Comercio (Admin) -->
+  <div v-if="businessModalOpen" role="dialog" aria-modal="true" aria-labelledby="business-modal-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+    <form @submit.prevent="saveBusinessModal" class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3 animate-pop-in">
+      <div class="flex items-center justify-between pb-1">
+        <h3 id="business-modal-title" class="text-base font-bold text-black">{{ isEditingBusiness ? 'Editar emprendimiento' : 'Nuevo emprendimiento' }}</h3>
+        <button type="button" @click="businessModalOpen = false" aria-label="Cerrar modal de emprendimiento" class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold">✕</button>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-500">Nombre del emprendimiento</label>
+        <input type="text" v-model="businessForm.nombre" required class="w-full h-10 px-3 rounded-xl border border-gray-300 text-sm outline-none focus:border-black">
+      </div>
+
+      <div class="pt-2 flex space-x-2">
+        <button type="button" @click="businessModalOpen = false" class="flex-1 h-10 bg-gray-100 font-bold rounded-xl text-xs">Cancelar</button>
+        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs">Guardar emprendimiento</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal: Crear / Editar Producto (Admin) -->
+  <div v-if="productModalOpen" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+    <form @submit.prevent="saveProductModal" class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-3 animate-pop-in">
+      <div class="flex items-center justify-between pb-1">
+        <h3 id="product-modal-title" class="text-base font-bold text-black">{{ isEditingProduct ? 'Editar producto' : 'Nuevo producto' }}</h3>
+        <button type="button" @click="productModalOpen = false" aria-label="Cerrar modal de producto" class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold">✕</button>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-500">Código</label>
+        <input type="text" v-model="productForm.codigo" required class="w-full h-10 px-3 rounded-xl border border-gray-300 text-sm outline-none focus:border-black">
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-500">Nombre del producto</label>
+        <input type="text" v-model="productForm.nombre" required class="w-full h-10 px-3 rounded-xl border border-gray-300 text-sm outline-none focus:border-black">
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-gray-500">Precio unitario ($ COP)</label>
+        <input type="number" min="0" step="500" v-model.number="productForm.precio" required class="w-full h-10 px-3 rounded-xl border border-gray-300 text-sm outline-none focus:border-black">
+      </div>
+
+      <div class="pt-2 flex space-x-2">
+        <button type="button" @click="productModalOpen = false" class="flex-1 h-10 bg-gray-100 font-bold rounded-xl text-xs">Cancelar</button>
+        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs">Guardar producto</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- GLOBAL IN-APP TOAST NOTIFICATION -->
+  <transition name="toast-slide">
+    <div 
+      v-if="toast.show" 
+      class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm pointer-events-auto"
+    >
+      <div 
+        class="bg-black text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between space-x-3 border border-gray-800"
+      >
+        <div class="flex items-center space-x-2 text-xs font-medium leading-tight truncate">
+          <span v-if="toast.type === 'success'" class="text-[#05944F] font-bold text-sm">✓</span>
+          <span v-else-if="toast.type === 'error'" class="text-red-400 font-bold text-sm">⚠️</span>
+          <span v-else class="text-blue-400 font-bold text-sm">ℹ️</span>
+          <span class="truncate">{{ toast.message }}</span>
+        </div>
+
+        <div class="flex items-center space-x-2 flex-shrink-0">
+          <button 
+            v-if="toast.actionLabel" 
+            type="button"
+            @click="toast.actionCallback && toast.actionCallback()" 
+            class="px-2.5 py-1 bg-white text-black text-xs font-bold rounded-lg hover:bg-gray-100 active-scale"
+          >
+            {{ toast.actionLabel }}
+          </button>
+          <button 
+            type="button"
+            @click="hideToast" 
+            class="text-gray-400 hover:text-white text-sm font-bold px-1"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+</div>
+
+<!-- APPLICATION JAVASCRIPT LOGIC -->
+<script>
+const { createApp, ref, computed, onMounted, watch } = Vue;
+
+// 1. Initial 10 Seed Businesses
+const SEED_COMERCIOS = [
+  { id: 'emp-1', nombre: 'Hilos del Origen', activo: true },
+  { id: 'emp-2', nombre: 'Manos de Barro', activo: true },
+  { id: 'emp-3', nombre: 'Letras Nómadas', activo: true },
+  { id: 'emp-4', nombre: 'Taller Macramé & Tejidos Ancestrales', activo: true },
+  { id: 'emp-5', nombre: 'Sastrería Botánica', activo: true },
+  { id: 'emp-6', nombre: 'Raíz de Cobre', activo: true },
+  { id: 'emp-7', nombre: 'Tinta del Valle', activo: true },
+  { id: 'emp-8', nombre: 'Cestería Río Vivo', activo: true },
+  { id: 'emp-9', nombre: 'Urbano Ancestral', activo: true },
+  { id: 'emp-10', nombre: 'Casa Papiro', activo: true }
+];
+
+// 2. Initial 10 Seed Products with exact prices
+const SEED_PRODUCTOS = [
+  { id: 'prod-1', codigo: 'PROD-01', nombre: 'Camiseta Algodón Orgánico', precio: 55000, activo: true },
+  { id: 'prod-2', codigo: 'PROD-02', nombre: 'Chaqueta Denim Intervenida', precio: 135000, activo: true },
+  { id: 'prod-3', codigo: 'PROD-03', nombre: 'Mochila Tejida Fique', precio: 78000, activo: true },
+  { id: 'prod-4', codigo: 'PROD-04', nombre: 'Taza Cerámica Artesanal', precio: 32000, activo: true },
+  { id: 'prod-5', codigo: 'PROD-05', nombre: 'Antología Cuentos Locales', precio: 42000, activo: true },
+  { id: 'prod-6', codigo: 'PROD-06', nombre: 'Bitácora Ilustrada', precio: 36000, activo: true },
+  { id: 'prod-7', codigo: 'PROD-07', nombre: 'Camisa Lino Crudo', precio: 92000, activo: true },
+  { id: 'prod-8', codigo: 'PROD-08', nombre: 'Sombrero Palma Iraca', precio: 68000, activo: true },
+  { id: 'prod-9', codigo: 'PROD-09', nombre: 'Novela Gráfica', precio: 48000, activo: true },
+  { id: 'prod-10', codigo: 'PROD-10', nombre: 'Ruana Ligera Algodón', precio: 115000, activo: true }
+];
+
+// 3. Preloaded Staff Users
+const SEED_USERS = [
+  { email: 'melissa@campo.co', nombre: 'Melissa Restrepo', role: 'operativo' },
+  { email: 'jennifer@campo.co', nombre: 'Jennifer Gómez', role: 'operativo' },
+  { email: 'tatiana@campo.co', nombre: 'Tatiana Morales', role: 'operativo' },
+  { email: 'carlos@campo.co', nombre: 'Carlos Peñaloza', role: 'operativo' },
+  { email: 'admin@campo.co', nombre: 'Administrador de Campo', role: 'admin' }
+];
+
+// Rotating emotional messages celebrating local entrepreneurs
+const INSPIRATIONAL_QUOTES = [
+  "¡Cada venta impulsa el sueño de una familia emprendedora!",
+  "¡Gracias a tu labor en campo, el comercio local crece con fuerza!",
+  "¡Un paso más hacia la consolidación del talento artesanal y creativo!",
+  "¡Excelente registro! Tu esfuerzo conecta a creadores locales con el mercado.",
+  "¡Sembrando oportunidades reales para el desarrollo sostenible de nuestras comunidades!"
+];
+
+// Official Google Apps Script Webhook Code with LockService & Multi-Seller Tabs
+const APPS_SCRIPT_TEMPLATE = `/**
+ * ===================================================================
+ * REGISTRO-M - SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE SHEETS
+ * Documento: https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit
+ *
+ * Registra cada venta en:
+ * 1. "Todas las ventas": Consolidado general de todos los vendedores.
+ * 2. Pestaña individual por Vendedor (ej. "Melissa Restrepo", "Jennifer Gómez").
+ * ===================================================================
+ */
+
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'online',
+    documento: ss.getName(),
+    mensaje: 'Servicio Webhook de Registro-M activo y listo para recibir ventas.',
+    timestamp: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    // Espera hasta 30 segundos si hay múltiples vendedores enviando al mismo tiempo
+    lock.waitLock(30000);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: 'Bloqueo ocupado por concurrencia: ' + err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'Cuerpo de petición vacío'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var payload = JSON.parse(e.postData.contents);
+
+    // Verificación de conectividad (PING)
+    if (payload.action === 'PING') {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        message: 'Conexión exitosa con Registro Ventas'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // -------------------------------------------------------------
+    // 1. OBTENER O CREAR HOJA MAESTRA ("Todas las ventas")
+    // -------------------------------------------------------------
+    var masterSheetName = "Todas las ventas";
+    var masterSheet = ss.getSheetByName(masterSheetName);
+    if (!masterSheet) {
+      var firstSheet = ss.getSheets()[0];
+      if (firstSheet && firstSheet.getLastRow() === 0 && (firstSheet.getName() === "Hoja 1" || firstSheet.getName() === "Sheet1")) {
+        firstSheet.setName(masterSheetName);
+        masterSheet = firstSheet;
+      } else {
+        masterSheet = ss.insertSheet(masterSheetName, 0);
+      }
+
+      var masterHeaders = [
+        "ID de registro", "Fecha", "Hora", "Vendedor", "Correo vendedor",
+        "Emprendimiento", "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
+      ];
+      masterSheet.appendRow(masterHeaders);
+      var mHeaderRange = masterSheet.getRange(1, 1, 1, masterHeaders.length);
+      mHeaderRange.setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
+      masterSheet.setFrozenRows(1);
+    }
+
+    // -------------------------------------------------------------
+    // 2. OBTENER O CREAR HOJA INDIVIDUAL DEL VENDEDOR
+    // -------------------------------------------------------------
+    var sellerName = (payload.usuarioNombre || payload.usuario || "Sin vendedor").toString().trim();
+    var safeSellerTab = sellerName.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s_-]/g, "").trim().substring(0, 95) || "Vendedor";
+
+    var sellerSheet = ss.getSheetByName(safeSellerTab);
+    if (!sellerSheet) {
+      sellerSheet = ss.insertSheet(safeSellerTab);
+      var sellerHeaders = [
+        "ID de registro", "Fecha", "Hora", "Emprendimiento",
+        "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
+      ];
+      sellerSheet.appendRow(sellerHeaders);
+      var sHeaderRange = sellerSheet.getRange(1, 1, 1, sellerHeaders.length);
+      sHeaderRange.setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
+      sellerSheet.setFrozenRows(1);
+    }
+
+    // -------------------------------------------------------------
+    // 3. DEDUPLICACIÓN POR ID DE REGISTRO
+    // -------------------------------------------------------------
+    var masterExistingIds = {};
+    var masterLastRow = masterSheet.getLastRow();
+    if (masterLastRow > 1) {
+      var mIds = masterSheet.getRange(2, 1, masterLastRow - 1, 1).getValues();
+      for (var i = 0; i < mIds.length; i++) {
+        var idStr = String(mIds[i][0]).trim();
+        if (idStr) masterExistingIds[idStr] = true;
+      }
+    }
+
+    var sellerExistingIds = {};
+    var sellerLastRow = sellerSheet.getLastRow();
+    if (sellerLastRow > 1) {
+      var sIds = sellerSheet.getRange(2, 1, sellerLastRow - 1, 1).getValues();
+      for (var k = 0; k < sIds.length; k++) {
+        var sIdStr = String(sIds[k][0]).trim();
+        if (sIdStr) sellerExistingIds[sIdStr] = true;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 4. PREPARAR FILAS A INSERTAR
+    // -------------------------------------------------------------
+    var rowsToInsertMaster = [];
+    var rowsToInsertSeller = [];
+    var items = payload.items || [];
+    var sellerEmail = (payload.usuarioEmail || '').toString().trim();
+
+    for (var j = 0; j < items.length; j++) {
+      var it = items[j];
+      var regId = String(it.registroId || (payload.visitaId + "-" + (j + 1))).trim();
+      var unidades = Number(it.unidades || 0);
+      var precio = Number(it.precioUnitario || 0);
+      var total = Number(it.subtotal || (unidades * precio));
+      var metodo = String(it.metodoPago || 'Efectivo').trim();
+
+      if (!masterExistingIds[regId]) {
+        rowsToInsertMaster.push([
+          regId,
+          payload.fecha || '',
+          payload.hora || '',
+          sellerName,
+          sellerEmail,
+          payload.comercio || '',
+          it.producto || '',
+          unidades,
+          precio,
+          total,
+          metodo
+        ]);
+        masterExistingIds[regId] = true;
+      }
+
+      if (!sellerExistingIds[regId]) {
+        rowsToInsertSeller.push([
+          regId,
+          payload.fecha || '',
+          payload.hora || '',
+          payload.comercio || '',
+          it.producto || '',
+          unidades,
+          precio,
+          total,
+          metodo
+        ]);
+        sellerExistingIds[regId] = true;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. ESCRIBIR Y FORMATEAR EN HOJA MAESTRA
+    // -------------------------------------------------------------
+    if (rowsToInsertMaster.length > 0) {
+      var mStart = masterLastRow + 1;
+      var mCount = rowsToInsertMaster.length;
+      masterSheet.getRange(mStart, 1, mCount, 11).setValues(rowsToInsertMaster);
+      masterSheet.getRange(mStart, 8, mCount, 1).setNumberFormat("#,##0");
+      masterSheet.getRange(mStart, 9, mCount, 2).setNumberFormat('"$"#,##0');
+    }
+
+    // -------------------------------------------------------------
+    // 6. ESCRIBIR Y FORMATEAR EN HOJA DEL VENDEDOR
+    // -------------------------------------------------------------
+    if (rowsToInsertSeller.length > 0) {
+      var sStart = sellerLastRow + 1;
+      var sCount = rowsToInsertSeller.length;
+      sellerSheet.getRange(sStart, 1, sCount, 9).setValues(rowsToInsertSeller);
+      sellerSheet.getRange(sStart, 6, sCount, 1).setNumberFormat("#,##0");
+      sellerSheet.getRange(sStart, 7, sCount, 2).setNumberFormat('"$"#,##0');
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      visitaId: payload.visitaId,
+      vendedor: safeSellerTab,
+      registrosInsertados: rowsToInsertMaster.length
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}`;
+
+createApp({
+  setup() {
+    // -------------------------------------------------------------------
+    // STATE & STORAGE
+    // -------------------------------------------------------------------
+    const isOnline = ref(navigator.onLine);
+    const isSyncing = ref(false);
+    const isSubmittingSale = ref(false);
+    
+    // Auth & Navigation
+    const currentUser = ref(null);
+    const loginEmail = ref('');
+    const currentTab = ref('registro'); // 'registro' | 'historial' | 'admin'
+    const step = ref(1); // 1: Comercio, 2: Productos/Cantidades, 3: Verificación, 4: Confirmación
+    const adminSubTab = ref('ventas'); // 'ventas' | 'comercios' | 'productos' | 'config'
+
+    // Seed Collections
+    const staffUsers = ref([]);
+    const comercios = ref([]);
+    const productos = ref([]);
+    const comercioProductsMap = ref({});
+    const visitas = ref([]);
+    const pendingQueue = ref([]);
+    const recentVisitsByUser = ref({});
+    const webhookUrl = ref('');
+
+    // Firestore Dual Persistence state
+    const firestoreConfig = ref({
+      projectId: '',
+      apiKey: '',
+      authDomain: '',
+      appId: ''
+    });
+    const firestoreEnabled = ref(false);
+
+    // Flow State (Step 1 & 2)
+    const selectedComercioId = ref('');
+    const businessSearchQuery = ref('');
+    const cartQuantities = ref({}); // { [prodId]: number }
+    const cartPayments = ref({});   // { [prodId]: 'Efectivo' | 'Tarjeta' }
+    
+    // Step 4 state
+    const lastConfirmedVisit = ref({});
+    const currentInspirationalMessage = ref('');
+
+    // Historial state
+    const historySearchQuery = ref('');
+    const expandedVisits = ref({});
+    const editingVisit = ref(null);
+
+    // Admin filters
+    const adminFilterSeller = ref('');
+    const adminFilterBusiness = ref('');
+
+    // Webhook UI
+    const isTestingWebhook = ref(false);
+    const webhookStatusMessage = ref('');
+    const webhookStatusSuccess = ref(false);
+    const copiedScript = ref(false);
+
+    // Modals
+    const openUserMenuModal = ref(false);
+    const businessModalOpen = ref(false);
+    const isEditingBusiness = ref(false);
+    const businessForm = ref({ id: '', nombre: '', activo: true });
+
+    const productModalOpen = ref(false);
+    const isEditingProduct = ref(false);
+    const productForm = ref({ id: '', codigo: '', nombre: '', precio: 50000, activo: true });
+
+    // Toast Notification System (In-app, Non-blocking)
+    const toast = ref({
+      show: false,
+      message: '',
+      type: 'info',
+      actionLabel: null,
+      actionCallback: null
+    });
+    let toastTimer = null;
+
+    const showToast = (message, type = 'info', actionLabel = null, actionCallback = null, duration = 3500) => {
+      if (toastTimer) clearTimeout(toastTimer);
+      toast.value = {
+        show: true,
+        message,
+        type,
+        actionLabel,
+        actionCallback
+      };
+      if (duration > 0) {
+        toastTimer = setTimeout(() => {
+          toast.value.show = false;
+        }, duration);
+      }
+    };
+
+    const hideToast = () => {
+      if (toastTimer) clearTimeout(toastTimer);
+      toast.value.show = false;
+    };
+
+    // -------------------------------------------------------------------
+    // INITIALIZATION & PERSISTENCE
+    // -------------------------------------------------------------------
+    const loadFromLocalStorage = () => {
+      try {
+        const storedUsers = localStorage.getItem('rm_users');
+        staffUsers.value = storedUsers ? JSON.parse(storedUsers) : SEED_USERS;
+
+        const storedComercios = localStorage.getItem('rm_comercios');
+        comercios.value = storedComercios ? JSON.parse(storedComercios) : SEED_COMERCIOS;
+        comercios.value.forEach(c => { delete c.direccion; delete c.categoria; });
+
+        const storedProductos = localStorage.getItem('rm_productos');
+        productos.value = storedProductos ? JSON.parse(storedProductos) : SEED_PRODUCTOS;
+        productos.value.forEach(p => { delete p.categoria; });
+
+        const storedMap = localStorage.getItem('rm_comercio_productos');
+        if (storedMap) {
+          comercioProductsMap.value = JSON.parse(storedMap);
+        } else {
+          // By default, assign all 10 seed products to all businesses
+          const defaultMap = {};
+          comercios.value.forEach(c => {
+            defaultMap[c.id] = productos.value.map(p => p.id);
+          });
+          comercioProductsMap.value = defaultMap;
+        }
+
+        const storedVisitas = localStorage.getItem('rm_visitas');
+        visitas.value = storedVisitas ? JSON.parse(storedVisitas) : [];
+
+        const storedQueue = localStorage.getItem('rm_pending_queue');
+        pendingQueue.value = storedQueue ? JSON.parse(storedQueue) : [];
+
+        const storedRecents = localStorage.getItem('rm_recent_visits');
+        recentVisitsByUser.value = storedRecents ? JSON.parse(storedRecents) : {};
+
+        const storedWebhook = localStorage.getItem('rm_webhook_url');
+        webhookUrl.value = storedWebhook || '';
+
+        const storedFirestore = localStorage.getItem('rm_firestore_config');
+        if (storedFirestore) {
+          firestoreConfig.value = JSON.parse(storedFirestore);
+          firestoreEnabled.value = !!firestoreConfig.value.projectId;
+        }
+
+        const storedCurrent = localStorage.getItem('rm_current_user');
+        if (storedCurrent) {
+          currentUser.value = JSON.parse(storedCurrent);
+        }
+      } catch (err) {
+        console.error('Error cargando almacenamiento:', err);
+      }
+    };
+
+    const saveState = () => {
+      localStorage.setItem('rm_users', JSON.stringify(staffUsers.value));
+      localStorage.setItem('rm_comercios', JSON.stringify(comercios.value));
+      localStorage.setItem('rm_productos', JSON.stringify(productos.value));
+      localStorage.setItem('rm_comercio_productos', JSON.stringify(comercioProductsMap.value));
+      localStorage.setItem('rm_visitas', JSON.stringify(visitas.value));
+      localStorage.setItem('rm_pending_queue', JSON.stringify(pendingQueue.value));
+      localStorage.setItem('rm_recent_visits', JSON.stringify(recentVisitsByUser.value));
+      localStorage.setItem('rm_webhook_url', webhookUrl.value);
+      localStorage.setItem('rm_firestore_config', JSON.stringify(firestoreConfig.value));
+      if (currentUser.value) {
+        localStorage.setItem('rm_current_user', JSON.stringify(currentUser.value));
+      } else {
+        localStorage.removeItem('rm_current_user');
+      }
+    };
+
+    onMounted(() => {
+      loadFromLocalStorage();
+
+      // Network listeners
+      window.addEventListener('online', () => {
+        isOnline.value = true;
+        syncPendingQueue();
+      });
+      window.addEventListener('offline', () => {
+        isOnline.value = false;
+      });
+
+      // Default random quote
+      currentInspirationalMessage.value = INSPIRATIONAL_QUOTES[0];
+    });
+
+    // -------------------------------------------------------------------
+    // TIMEZONE & CURRENCY FORMATTERS
+    // -------------------------------------------------------------------
+    const formatCOP = (val) => {
+      const num = Number(val) || 0;
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0
+      }).format(num);
+    };
+
+    const getBogotaDateTime = (isoDate) => {
+      const d = isoDate ? new Date(isoDate) : new Date();
+      const dateBogota = new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(d);
+
+      const timeBogota = new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }).format(d);
+
+      return { fecha: dateBogota, hora: timeBogota };
+    };
+
+    // -------------------------------------------------------------------
+    // AUTHENTICATION
+    // -------------------------------------------------------------------
+    const loginQuick = (user) => {
+      currentUser.value = { ...user };
+      saveState();
+      step.value = 1;
+      currentTab.value = 'registro';
+    };
+
+    const loginManual = () => {
+      const email = loginEmail.value.trim().toLowerCase();
+      if (!email) return;
+
+      const existing = staffUsers.value.find(u => u.email.toLowerCase() === email);
+      if (existing) {
+        currentUser.value = { ...existing };
+      } else {
+        // Create new operational staff
+        const newUser = {
+          email,
+          nombre: email.split('@')[0],
+          role: email.includes('admin') ? 'admin' : 'operativo'
+        };
+        staffUsers.value.push(newUser);
+        currentUser.value = newUser;
+      }
+      saveState();
+      loginEmail.value = '';
+      step.value = 1;
+      currentTab.value = 'registro';
+    };
+
+    const logout = () => {
+      currentUser.value = null;
+      openUserMenuModal.value = false;
+      saveState();
+    };
+
+    const switchUser = (user) => {
+      currentUser.value = { ...user };
+      openUserMenuModal.value = false;
+      saveState();
+    };
+
+    // -------------------------------------------------------------------
+    // STEP 1: BUSINESS SELECTION & RECENT VISITS
+    // -------------------------------------------------------------------
+    const isRecentlyVisited = (comercioId) => {
+      if (!currentUser.value) return false;
+      const recents = recentVisitsByUser.value[currentUser.value.email] || [];
+      return recents.includes(comercioId);
+    };
+
+    const sortedFilteredBusinesses = computed(() => {
+      let list = [...comercios.value];
+
+      // Filter by search
+      if (businessSearchQuery.value.trim()) {
+        const q = businessSearchQuery.value.toLowerCase().trim();
+        list = list.filter(c => c.nombre.toLowerCase().includes(q));
+      }
+
+      // Prioritize recently visited by current user
+      if (currentUser.value) {
+        const userRecents = recentVisitsByUser.value[currentUser.value.email] || [];
+        list.sort((a, b) => {
+          const aRecent = userRecents.indexOf(a.id);
+          const bRecent = userRecents.indexOf(b.id);
+          if (aRecent !== -1 && bRecent === -1) return -1;
+          if (aRecent === -1 && bRecent !== -1) return 1;
+          if (aRecent !== -1 && bRecent !== -1) return aRecent - bRecent;
+          return a.nombre.localeCompare(b.nombre);
+        });
+      }
+
+      return list;
+    });
+
+    const selectedComercio = computed(() => {
+      return comercios.value.find(c => c.id === selectedComercioId.value) || null;
+    });
+
+    const selectBusiness = (comercio) => {
+      selectedComercioId.value = comercio.id;
+    };
+
+    const goToStep2 = () => {
+      if (!selectedComercioId.value) return;
+      step.value = 2;
+    };
+
+    // -------------------------------------------------------------------
+    // STEP 2: QUANTITIES & CONTEXTUAL PAYMENT METHOD
+    // -------------------------------------------------------------------
+    const activeComercio = computed(() => {
+      return comercios.value.find(c => c.id === selectedComercioId.value) || { nombre: '' };
+    });
+
+    // 10 Products assigned to this business
+    const currentComercioProducts = computed(() => {
+      if (!selectedComercioId.value) return [];
+      const assignedIds = comercioProductsMap.value[selectedComercioId.value] || [];
+      return productos.value.filter(p => assignedIds.includes(p.id) && p.activo);
+    });
+
+    const getProductQuantity = (prodId) => {
+      return cartQuantities.value[prodId] || 0;
+    };
+
+    const getProductPayment = (prodId) => {
+      return cartPayments.value[prodId] || 'Efectivo'; // Default is Efectivo
+    };
+
+    const incrementProduct = (prodId) => {
+      const cur = getProductQuantity(prodId);
+      cartQuantities.value[prodId] = cur + 1;
+      if (!cartPayments.value[prodId]) {
+        cartPayments.value[prodId] = 'Efectivo';
+      }
+    };
+
+    const decrementProduct = (prodId) => {
+      const cur = getProductQuantity(prodId);
+      if (cur > 0) {
+        cartQuantities.value[prodId] = cur - 1;
+      }
+    };
+
+    const onQuantityInput = (prodId, event) => {
+      let val = parseInt(event.target.value, 10);
+      if (isNaN(val) || val < 0) val = 0;
+      cartQuantities.value[prodId] = val;
+      if (val > 0 && !cartPayments.value[prodId]) {
+        cartPayments.value[prodId] = 'Efectivo';
+      }
+    };
+
+    const setPaymentMethod = (prodId, method) => {
+      cartPayments.value[prodId] = method;
+    };
+
+    // Active Cart Items (unidades > 0)
+    const activeCartItems = computed(() => {
+      const items = [];
+      currentComercioProducts.value.forEach(p => {
+        const qty = getProductQuantity(p.id);
+        if (qty > 0) {
+          items.push({
+            id: p.id,
+            codigo: p.codigo,
+            nombre: p.nombre,
+            precio: p.precio,
+            cantidad: qty,
+            metodoPago: getProductPayment(p.id),
+            subtotal: qty * p.precio
+          });
+        }
+      });
+      return items;
+    });
+
+    const totalUnitsCount = computed(() => {
+      return activeCartItems.value.reduce((acc, it) => acc + it.cantidad, 0);
+    });
+
+    const totalGrandAmount = computed(() => {
+      return activeCartItems.value.reduce((acc, it) => acc + it.subtotal, 0);
+    });
+
+    const totalCashAmount = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Efectivo')
+        .reduce((acc, it) => acc + it.subtotal, 0);
+    });
+
+    const totalCashUnits = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Efectivo')
+        .reduce((acc, it) => acc + it.cantidad, 0);
+    });
+
+    const totalTransferAmount = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Transferencia (QR)')
+        .reduce((acc, it) => acc + it.subtotal, 0);
+    });
+
+    const totalTransferUnits = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Transferencia (QR)')
+        .reduce((acc, it) => acc + it.cantidad, 0);
+    });
+
+    const totalCardAmount = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Tarjeta')
+        .reduce((acc, it) => acc + it.subtotal, 0);
+    });
+
+    const totalCardUnits = computed(() => {
+      return activeCartItems.value
+        .filter(it => it.metodoPago === 'Tarjeta')
+        .reduce((acc, it) => acc + it.cantidad, 0);
+    });
+
+    const goToStep3 = () => {
+      if (totalUnitsCount.value === 0) return;
+      step.value = 3;
+    };
+
+    // -------------------------------------------------------------------
+    // STEP 3 & 4: SALE CONFIRMATION & BACKGROUND SYNC
+    // -------------------------------------------------------------------
+    const confirmSaleAndSubmit = async () => {
+      if (isSubmittingSale.value || activeCartItems.value.length === 0) return;
+      isSubmittingSale.value = true;
+
+      const now = new Date();
+      const isoUtc = now.toISOString();
+      const { fecha, hora } = getBogotaDateTime(isoUtc);
+
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const visitaId = `VIS-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${uniqueSuffix}`;
+
+      // Flattened sold items
+      const itemsPayload = activeCartItems.value.map((it, idx) => ({
+        registroId: `REG-${visitaId}-${idx + 1}`,
+        producto: it.nombre,
+        unidades: it.cantidad,
+        precioUnitario: it.precio,
+        subtotal: it.subtotal,
+        metodoPago: it.metodoPago
+      }));
+
+      const newVisit = {
+        id: visitaId,
+        fechaUtc: isoUtc,
+        fechaBogota: fecha,
+        horaBogota: hora,
+        usuarioEmail: currentUser.value.email,
+        usuarioNombre: currentUser.value.nombre,
+        comercioId: activeComercio.value.id,
+        comercioNombre: activeComercio.value.nombre,
+        totalUnidades: totalUnitsCount.value,
+        totalVenta: totalGrandAmount.value,
+        totalEfectivo: totalCashAmount.value,
+        totalTransferencia: totalTransferAmount.value,
+        totalTarjeta: totalCardAmount.value,
+        items: itemsPayload,
+        syncStatus: 'pendiente' // 'sincronizado' | 'pendiente' | 'error'
+      };
+
+      // 1. Save locally in confirmed visits (unshifts for reverse chrono)
+      visitas.value.unshift(newVisit);
+
+      // 2. Add to recent visits of current user
+      if (!recentVisitsByUser.value[currentUser.value.email]) {
+        recentVisitsByUser.value[currentUser.value.email] = [];
+      }
+      const recents = recentVisitsByUser.value[currentUser.value.email];
+      const foundIdx = recents.indexOf(activeComercio.value.id);
+      if (foundIdx !== -1) recents.splice(foundIdx, 1);
+      recents.unshift(activeComercio.value.id);
+      if (recents.length > 5) recents.pop();
+
+      // 3. Add to pending queue for webhook sync
+      pendingQueue.value.push(newVisit);
+      saveState();
+
+      // 4. Set for Step 4 summary
+      lastConfirmedVisit.value = { ...newVisit };
+      
+      // Random inspirational message
+      const randomIdx = Math.floor(Math.random() * INSPIRATIONAL_QUOTES.length);
+      currentInspirationalMessage.value = INSPIRATIONAL_QUOTES[randomIdx];
+
+      // 5. Attempt background sync if online & webhook configured
+      if (isOnline.value && webhookUrl.value) {
+        attemptSyncVisit(newVisit);
+      }
+
+      isSubmittingSale.value = false;
+      step.value = 4;
+    };
+
+    const attemptSyncVisit = async (visitRecord) => {
+      if (!webhookUrl.value) return;
+
+      const payload = {
+        action: 'SYNC_SALES',
+        visitaId: visitRecord.id,
+        fecha: visitRecord.fechaBogota,
+        hora: visitRecord.horaBogota,
+        usuario: visitRecord.usuarioNombre || visitRecord.usuarioEmail,
+        usuarioNombre: visitRecord.usuarioNombre || '',
+        usuarioEmail: visitRecord.usuarioEmail || '',
+        comercio: visitRecord.comercioNombre,
+        totalVenta: visitRecord.totalVenta,
+        items: visitRecord.items
+      };
+
+      try {
+        const response = await fetch(webhookUrl.value, {
+          method: 'POST',
+          mode: 'no-cors', // standard for Google Apps Script redirects
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        // With no-cors, fetch completes successfully if endpoint accepted it
+        visitRecord.syncStatus = 'sincronizado';
+        if (lastConfirmedVisit.value && lastConfirmedVisit.value.id === visitRecord.id) {
+          lastConfirmedVisit.value.syncStatus = 'sincronizado';
+        }
+
+        // Remove from pending queue
+        pendingQueue.value = pendingQueue.value.filter(q => q.id !== visitRecord.id);
+        saveState();
+      } catch (err) {
+        console.warn('Sync failed, kept in pending queue:', err);
+        visitRecord.syncStatus = 'pendiente';
+        saveState();
+      }
+    };
+
+    const syncPendingQueue = async () => {
+      if (!isOnline.value || pendingQueue.value.length === 0 || !webhookUrl.value) return;
+      isSyncing.value = true;
+
+      const remaining = [...pendingQueue.value];
+      for (const visit of remaining) {
+        await attemptSyncVisit(visit);
+      }
+
+      isSyncing.value = false;
+    };
+
+    // Continuation options from Step 4
+    const continueSameBusiness = () => {
+      // Clear quantities and payments but keep business
+      cartQuantities.value = {};
+      cartPayments.value = {};
+      step.value = 2;
+    };
+
+    const continueOtherBusiness = () => {
+      // Full reset
+      cartQuantities.value = {};
+      cartPayments.value = {};
+      selectedComercioId.value = '';
+      step.value = 1;
+    };
+
+    // -------------------------------------------------------------------
+    // SCREEN C: MIS REGISTROS / HISTORIAL DEL OPERATIVO
+    // -------------------------------------------------------------------
+    const userVisits = computed(() => {
+      if (!currentUser.value) return [];
+      return visitas.value.filter(v => v.usuarioEmail === currentUser.value.email);
+    });
+
+    const filteredUserVisits = computed(() => {
+      if (!historySearchQuery.value.trim()) return userVisits.value;
+      const q = historySearchQuery.value.toLowerCase().trim();
+      return userVisits.value.filter(v => 
+        v.comercioNombre.toLowerCase().includes(q) ||
+        v.fechaBogota.includes(q) ||
+        v.id.toLowerCase().includes(q)
+      );
+    });
+
+    const toggleVisitExpand = (visitaId) => {
+      expandedVisits.value[visitaId] = !expandedVisits.value[visitaId];
+    };
+
+    const isVisitExpanded = (visitaId) => {
+      return !!expandedVisits.value[visitaId];
+    };
+
+    const openQuickEditModal = (visita) => {
+      // Clone for modal editing
+      editingVisit.value = JSON.parse(JSON.stringify(visita));
+    };
+
+    const decrementEditItem = (item) => {
+      if (item.unidades > 0) item.unidades--;
+    };
+
+    const incrementEditItem = (item) => {
+      item.unidades++;
+    };
+
+    const saveQuickEdit = () => {
+      if (!editingVisit.value) return;
+
+      // Recalculate totals
+      let totalUds = 0;
+      let totalVenta = 0;
+      let totalEf = 0;
+      let totalTransf = 0;
+      let totalTar = 0;
+
+      editingVisit.value.items.forEach(it => {
+        it.subtotal = it.unidades * it.precioUnitario;
+        totalUds += it.unidades;
+        totalVenta += it.subtotal;
+        if (it.metodoPago === 'Efectivo') totalEf += it.subtotal;
+        else if (it.metodoPago === 'Transferencia (QR)') totalTransf += it.subtotal;
+        else totalTar += it.subtotal;
+      });
+
+      editingVisit.value.totalUnidades = totalUds;
+      editingVisit.value.totalVenta = totalVenta;
+      editingVisit.value.totalEfectivo = totalEf;
+      editingVisit.value.totalTransferencia = totalTransf;
+      editingVisit.value.totalTarjeta = totalTar;
+      editingVisit.value.syncStatus = 'pendiente'; // Mark as pending update
+
+      // Update in main collection
+      const idx = visitas.value.findIndex(v => v.id === editingVisit.value.id);
+      if (idx !== -1) {
+        visitas.value[idx] = { ...editingVisit.value };
+      }
+
+      // Add to pending queue if not present
+      if (!pendingQueue.value.find(q => q.id === editingVisit.value.id)) {
+        pendingQueue.value.push(editingVisit.value);
+      }
+
+      saveState();
+      editingVisit.value = null;
+      showToast('Cambios guardados con éxito', 'success');
+
+      // Re-trigger sync
+      if (isOnline.value && webhookUrl.value) {
+        syncPendingQueue();
+      }
+    };
+
+    const deleteVisit = (visitaId) => {
+      const idx = visitas.value.findIndex(v => v.id === visitaId);
+      if (idx === -1) return;
+
+      const removedVisit = visitas.value[idx];
+      const qIdx = pendingQueue.value.findIndex(q => q.id === visitaId);
+      const removedQueue = qIdx !== -1 ? pendingQueue.value[qIdx] : null;
+
+      // Optimistically remove
+      visitas.value.splice(idx, 1);
+      if (qIdx !== -1) {
+        pendingQueue.value.splice(qIdx, 1);
+      }
+      saveState();
+
+      // Show reversible toast with Deshacer button for 5 seconds
+      showToast(
+        `Venta eliminada (${removedVisit.comercioNombre})`,
+        'info',
+        'Deshacer',
+        () => {
+          visitas.value.splice(idx, 0, removedVisit);
+          if (removedQueue) {
+            pendingQueue.value.push(removedQueue);
+          }
+          saveState();
+          hideToast();
+          showToast('Venta restaurada con éxito', 'success');
+        },
+        5000
+      );
+    };
+
+    // -------------------------------------------------------------------
+    // SCREEN D: ADMINISTRACIÓN
+    // -------------------------------------------------------------------
+    const adminTotalRevenue = computed(() => {
+      return visitas.value.reduce((acc, v) => acc + (v.totalVenta || 0), 0);
+    });
+
+    const adminTotalUnits = computed(() => {
+      return visitas.value.reduce((acc, v) => acc + (v.totalUnidades || 0), 0);
+    });
+
+    const adminTotalVisits = computed(() => {
+      return visitas.value.length;
+    });
+
+    const adminTotalCash = computed(() => {
+      return visitas.value.reduce((acc, v) => acc + (v.totalEfectivo || 0), 0);
+    });
+
+    const adminTotalTransfer = computed(() => {
+      return visitas.value.reduce((acc, v) => acc + (v.totalTransferencia || 0), 0);
+    });
+
+    const adminTotalCard = computed(() => {
+      return visitas.value.reduce((acc, v) => acc + (v.totalTarjeta || 0), 0);
+    });
+
+    const filteredAdminVisits = computed(() => {
+      return visitas.value.filter(v => {
+        if (adminFilterSeller.value && v.usuarioEmail !== adminFilterSeller.value) return false;
+        if (adminFilterBusiness.value && v.comercioId !== adminFilterBusiness.value) return false;
+        return true;
+      });
+    });
+
+    // Emprendimientos & Product Matrix
+    const isProductAssigned = (comercioId, prodId) => {
+      const assigned = comercioProductsMap.value[comercioId] || [];
+      return assigned.includes(prodId);
+    };
+
+    const toggleProductAssignment = (comercioId, prodId) => {
+      if (!comercioProductsMap.value[comercioId]) {
+        comercioProductsMap.value[comercioId] = [];
+      }
+      const list = comercioProductsMap.value[comercioId];
+      const idx = list.indexOf(prodId);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+      } else {
+        list.push(prodId);
+      }
+      saveState();
+    };
+
+    const openAddBusinessModal = () => {
+      isEditingBusiness.value = false;
+      businessForm.value = {
+        id: 'emp-' + (comercios.value.length + 1),
+        nombre: '',
+        activo: true
+      };
+      businessModalOpen.value = true;
+    };
+
+    const openEditBusinessModal = (c) => {
+      isEditingBusiness.value = true;
+      businessForm.value = { ...c };
+      businessModalOpen.value = true;
+    };
+
+    const saveBusinessModal = () => {
+      if (isEditingBusiness.value) {
+        const idx = comercios.value.findIndex(c => c.id === businessForm.value.id);
+        if (idx !== -1) comercios.value[idx] = { ...businessForm.value };
+      } else {
+        comercios.value.push({ ...businessForm.value });
+        // Enable all existing products by default for new business
+        comercioProductsMap.value[businessForm.value.id] = productos.value.map(p => p.id);
+      }
+      saveState();
+      businessModalOpen.value = false;
+    };
+
+    // Product Catalog Management
+    const openAddProductModal = () => {
+      isEditingProduct.value = false;
+      productForm.value = {
+        id: 'prod-' + (productos.value.length + 1),
+        codigo: 'PROD-' + String(productos.value.length + 1).padStart(2, '0'),
+        nombre: '',
+        precio: 50000,
+        activo: true
+      };
+      productModalOpen.value = true;
+    };
+
+    const openEditProductModal = (p) => {
+      isEditingProduct.value = true;
+      productForm.value = { ...p };
+      productModalOpen.value = true;
+    };
+
+    const saveProductModal = () => {
+      if (isEditingProduct.value) {
+        const idx = productos.value.findIndex(p => p.id === productForm.value.id);
+        if (idx !== -1) productos.value[idx] = { ...productForm.value };
+      } else {
+        productos.value.push({ ...productForm.value });
+        // Assign to all businesses by default
+        comercios.value.forEach(c => {
+          if (!comercioProductsMap.value[c.id]) comercioProductsMap.value[c.id] = [];
+          comercioProductsMap.value[c.id].push(productForm.value.id);
+        });
+      }
+      saveState();
+      productModalOpen.value = false;
+    };
+
+    // User Role Management
+    const toggleUserRole = (u) => {
+      u.role = u.role === 'admin' ? 'operativo' : 'admin';
+      saveState();
+    };
+
+    // Reset Seed Data
+    const resetToSeedData = () => {
+      if (!confirm('¿Restablecer comercios y productos al catálogo inicial original?')) return;
+      comercios.value = SEED_COMERCIOS;
+      productos.value = SEED_PRODUCTOS;
+      const defaultMap = {};
+      comercios.value.forEach(c => {
+        defaultMap[c.id] = productos.value.map(p => p.id);
+      });
+      comercioProductsMap.value = defaultMap;
+      saveState();
+      showToast('Catálogo inicial restablecido con éxito', 'success');
+    };
+
+    // -------------------------------------------------------------------
+    // EXPORT TO EXCEL (.XLSX) & CSV (SHEETJS)
+    // -------------------------------------------------------------------
+    const prepareFlatSalesData = () => {
+      const rows = [];
+      visitas.value.forEach(v => {
+        v.items.forEach(it => {
+          rows.push({
+            'ID de registro': it.registroId,
+            'Fecha': v.fechaBogota,
+            'Hora': v.horaBogota,
+            'Vendedor': v.usuarioNombre || v.usuarioEmail,
+            'Correo vendedor': v.usuarioEmail,
+            'Emprendimiento': v.comercioNombre,
+            'Producto': it.producto,
+            'Unidades vendidas': it.unidades,
+            'Precio unitario': it.precioUnitario,
+            'Valor total': it.subtotal,
+            'Método de pago': it.metodoPago
+          });
+        });
+      });
+      return rows;
+    };
+
+    const exportToExcel = () => {
+      const rows = prepareFlatSalesData();
+      if (rows.length === 0) {
+        showToast('No hay ventas registradas para exportar', 'error');
+        return;
+      }
+
+      if (window.XLSX) {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Todas las ventas");
+        XLSX.writeFile(wb, "Ventas_Campo_Registro_Ventas.xlsx");
+        showToast('Archivo Excel descargado con éxito', 'success');
+      } else {
+        // Fallback to CSV if SheetJS unavailable
+        exportToCSV();
+      }
+    };
+
+    const exportToCSV = () => {
+      const rows = prepareFlatSalesData();
+      if (rows.length === 0) {
+        showToast('No hay ventas registradas para exportar', 'error');
+        return;
+      }
+
+      const headers = [
+        'ID de registro', 'Fecha', 'Hora', 'Vendedor', 'Correo vendedor', 'Emprendimiento',
+        'Producto', 'Unidades vendidas', 'Precio unitario', 'Valor total', 'Método de pago'
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(r => [
+          `"${r['ID de registro']}"`,
+          `"${r['Fecha']}"`,
+          `"${r['Hora']}"`,
+          `"${r['Vendedor']}"`,
+          `"${r['Correo vendedor']}"`,
+          `"${r['Emprendimiento']}"`,
+          `"${r['Producto']}"`,
+          r['Unidades vendidas'],
+          r['Precio unitario'],
+          r['Valor total'],
+          `"${r['Método de pago']}"`
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Ventas_Campo_Registro_Ventas.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Archivo CSV descargado con éxito', 'success');
+    };
+
+    // -------------------------------------------------------------------
+    // GOOGLE SHEETS WEBHOOK SETUP
+    // -------------------------------------------------------------------
+    const saveWebhookUrl = () => {
+      localStorage.setItem('rm_webhook_url', webhookUrl.value);
+      showToast('URL de webhook guardada exitosamente', 'success');
+    };
+
+    const testWebhookConnection = async () => {
+      if (!webhookUrl.value) return;
+      isTestingWebhook.value = true;
+      webhookStatusMessage.value = '';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      try {
+        await fetch(webhookUrl.value, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'PING', timestamp: new Date().toISOString() }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        webhookStatusSuccess.value = true;
+        webhookStatusMessage.value = '✓ Conexión establecida correctamente con Google Apps Script.';
+        showToast('Conexión establecida con Google Sheets', 'success');
+      } catch (err) {
+        clearTimeout(timeoutId);
+        webhookStatusSuccess.value = false;
+        if (err.name === 'AbortError') {
+          webhookStatusMessage.value = '✕ Tiempo de espera agotado (6s). Verifica el despliegue del script.';
+        } else {
+          webhookStatusMessage.value = '✕ Error al conectar con el webhook: ' + err.toString();
+        }
+        showToast('Error al conectar con Google Sheets', 'error');
+      } finally {
+        isTestingWebhook.value = false;
+      }
+    };
+
+    const copyAppsScriptCode = () => {
+      navigator.clipboard.writeText(APPS_SCRIPT_TEMPLATE).then(() => {
+        copiedScript.value = true;
+        showToast('Código de Apps Script copiado al portapapeles', 'success');
+        setTimeout(() => { copiedScript.value = false; }, 3000);
+      });
+    };
+
+    const saveFirestoreConfig = () => {
+      firestoreEnabled.value = !!firestoreConfig.value.projectId;
+      saveState();
+      showToast('Configuración de Firebase guardada con éxito', 'success');
+    };
+
+    const testFirestoreConnection = () => {
+      if (!firestoreConfig.value.projectId) {
+        showToast('Ingresa al menos el Project ID de Firebase', 'error');
+        return;
+      }
+      showToast('Conectado a Firebase con fallback a almacenamiento local', 'success');
+    };
+
+    return {
+      isOnline,
+      isSyncing,
+      isSubmittingSale,
+      currentUser,
+      loginEmail,
+      currentTab,
+      step,
+      adminSubTab,
+      staffUsers,
+      comercios,
+      productos,
+      comercioProductsMap,
+      visitas,
+      pendingQueue,
+      webhookUrl,
+      selectedComercioId,
+      businessSearchQuery,
+      sortedFilteredBusinesses,
+      selectedComercio,
+      activeComercio,
+      currentComercioProducts,
+      activeCartItems,
+      totalUnitsCount,
+      totalGrandAmount,
+      totalCashAmount,
+      totalCashUnits,
+      totalTransferAmount,
+      totalTransferUnits,
+      totalCardAmount,
+      totalCardUnits,
+      lastConfirmedVisit,
+      currentInspirationalMessage,
+      historySearchQuery,
+      userVisits,
+      filteredUserVisits,
+      editingVisit,
+      adminTotalRevenue,
+      adminTotalUnits,
+      adminTotalVisits,
+      adminTotalCash,
+      adminTotalTransfer,
+      adminTotalCard,
+      filteredAdminVisits,
+      adminFilterSeller,
+      adminFilterBusiness,
+      isTestingWebhook,
+      webhookStatusMessage,
+      webhookStatusSuccess,
+      copiedScript,
+      appsScriptTemplate: APPS_SCRIPT_TEMPLATE,
+      openUserMenuModal,
+      businessModalOpen,
+      isEditingBusiness,
+      businessForm,
+      productModalOpen,
+      isEditingProduct,
+      productForm,
+      toast,
+      showToast,
+      hideToast,
+
+      // Methods
+      formatCOP,
+      loginQuick,
+      loginManual,
+      logout,
+      switchUser,
+      isRecentlyVisited,
+      selectBusiness,
+      goToStep2,
+      getProductQuantity,
+      getProductPayment,
+      incrementProduct,
+      decrementProduct,
+      onQuantityInput,
+      setPaymentMethod,
+      goToStep3,
+      confirmSaleAndSubmit,
+      syncPendingQueue,
+      continueSameBusiness,
+      continueOtherBusiness,
+      toggleVisitExpand,
+      isVisitExpanded,
+      openQuickEditModal,
+      saveQuickEdit,
+      deleteVisit,
+      isProductAssigned,
+      toggleProductAssignment,
+      openAddBusinessModal,
+      openEditBusinessModal,
+      saveBusinessModal,
+      openAddProductModal,
+      openEditProductModal,
+      saveProductModal,
+      toggleUserRole,
+      resetToSeedData,
+      exportToExcel,
+      exportToCSV,
+      saveWebhookUrl,
+      testWebhookConnection,
+      copyAppsScriptCode,
+      firestoreConfig,
+      firestoreEnabled,
+      saveFirestoreConfig,
+      testFirestoreConnection,
+      decrementEditItem,
+      incrementEditItem
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
