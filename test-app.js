@@ -295,6 +295,18 @@ async function runE2ETests() {
           const adminSwitch = Array.from(document.querySelectorAll('.fixed button')).find(b => b.innerText.toLowerCase().includes('administrador'));
           if (adminSwitch) adminSwitch.click();
         })()`);
+        await new Promise(r => setTimeout(r, 400));
+
+        // Enter PIN 8588 in security modal
+        await evalExpr(`(() => {
+          const pinInp = document.getElementById('admin-pin-input');
+          if (pinInp) {
+            pinInp.value = '8588';
+            pinInp.dispatchEvent(new Event('input', { bubbles: true }));
+            const form = pinInp.closest('form');
+            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          }
+        })()`);
         await new Promise(r => setTimeout(r, 500));
 
         // Click Admin Tab

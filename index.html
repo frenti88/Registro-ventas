@@ -1550,6 +1550,81 @@
   <!-- MODALES DE APOYO (USUARIO, EDICIÓN, CREACIÓN)  -->
   <!-- ============================================== -->
 
+  <!-- Modal: Código de Acceso para Administrador (PIN 8588) -->
+  <div 
+    v-if="adminPinModalOpen" 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="admin-pin-title" 
+    class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4"
+  >
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 animate-pop-in">
+      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-900 flex items-center justify-center text-lg font-bold">
+            🔒
+          </div>
+          <div>
+            <h3 id="admin-pin-title" class="text-base font-extrabold text-black">Acceso de Administrador</h3>
+            <p class="text-xs text-gray-500">Ingresa el código de seguridad</p>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          @click="closeAdminPinModal" 
+          aria-label="Cerrar modal de código" 
+          class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form @submit.prevent="submitAdminPin" class="space-y-4">
+        <div>
+          <label for="admin-pin-input" class="block text-xs font-bold text-gray-600 mb-1.5">
+            Código de acceso (4 dígitos):
+          </label>
+          <input 
+            id="admin-pin-input"
+            type="password" 
+            inputmode="numeric" 
+            pattern="[0-9]*" 
+            maxlength="4" 
+            v-model="adminPinInput" 
+            placeholder="••••" 
+            class="w-full h-14 text-center tracking-[0.6em] text-2xl font-mono font-bold rounded-xl border transition outline-none"
+            :class="adminPinError ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:border-black focus:ring-1 focus:ring-black bg-gray-50 text-black'"
+            autocomplete="off"
+            autofocus
+          />
+          <p v-if="adminPinError" class="text-xs text-red-600 font-bold mt-1.5 flex items-center space-x-1">
+            <span>✕</span>
+            <span>Código incorrecto. Inténtalo de nuevo.</span>
+          </p>
+        </div>
+
+        <div class="flex space-x-3 pt-1">
+          <button 
+            type="button" 
+            @click="closeAdminPinModal" 
+            class="flex-1 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale transition touch-target"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            :disabled="!adminPinInput"
+            class="flex-1 h-12 rounded-xl bg-black hover:bg-gray-800 text-white text-xs font-extrabold active-scale transition touch-target flex items-center justify-center space-x-1"
+            :class="!adminPinInput ? 'opacity-50 cursor-not-allowed' : 'shadow-md'"
+          >
+            <span>Ingresar</span>
+            <span>→</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Menú de Usuario / Cambio de Perfil -->
   <div v-if="openUserMenuModal" role="dialog" aria-modal="true" aria-labelledby="user-menu-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 animate-pop-in">
@@ -2247,6 +2322,13 @@ createApp({
     const copiedScript = ref(false);
 
     // Modals
+    const ADMIN_ACCESS_CODE = '8588';
+    const adminPinModalOpen = ref(false);
+    const adminPinInput = ref('');
+    const adminPinError = ref(false);
+    const adminPendingUser = ref(null);
+    const adminPinSource = ref('login'); // 'login' | 'switch'
+
     const openUserMenuModal = ref(false);
     const businessModalOpen = ref(false);
     const isEditingBusiness = ref(false);
@@ -2466,9 +2548,56 @@ createApp({
     };
 
     // -------------------------------------------------------------------
-    // AUTHENTICATION
+    // AUTHENTICATION & ADMIN SECURITY ACCESS (PIN 8588)
     // -------------------------------------------------------------------
+    const handleAdminPinPrompt = (user, source = 'login') => {
+      adminPendingUser.value = user;
+      adminPinSource.value = source;
+      adminPinInput.value = '';
+      adminPinError.value = false;
+      adminPinModalOpen.value = true;
+      setTimeout(() => {
+        const inp = document.getElementById('admin-pin-input');
+        if (inp) inp.focus();
+      }, 150);
+    };
+
+    const submitAdminPin = () => {
+      if (adminPinInput.value.trim() === ADMIN_ACCESS_CODE) {
+        const userToLog = adminPendingUser.value || staffUsers.value.find(u => u.role === 'admin') || { email: 'admin@campo.co', nombre: 'Administrador', role: 'admin' };
+        currentUser.value = { ...userToLog };
+        saveState();
+        adminPinModalOpen.value = false;
+        openUserMenuModal.value = false;
+        adminPinInput.value = '';
+        adminPinError.value = false;
+        showToast('Acceso de administrador concedido', 'success');
+        if (adminPinSource.value === 'login') {
+          currentTab.value = 'admin';
+        }
+      } else {
+        adminPinError.value = true;
+        adminPinInput.value = '';
+        showToast('Código de acceso incorrecto', 'error');
+        setTimeout(() => {
+          const inp = document.getElementById('admin-pin-input');
+          if (inp) inp.focus();
+        }, 50);
+      }
+    };
+
+    const closeAdminPinModal = () => {
+      adminPinModalOpen.value = false;
+      adminPendingUser.value = null;
+      adminPinInput.value = '';
+      adminPinError.value = false;
+    };
+
     const loginQuick = (user) => {
+      if (user.role === 'admin') {
+        handleAdminPinPrompt(user, 'login');
+        return;
+      }
       currentUser.value = { ...user };
       saveState();
       step.value = 1;
@@ -2481,15 +2610,24 @@ createApp({
 
       const existing = staffUsers.value.find(u => u.email.toLowerCase() === email);
       if (existing) {
+        if (existing.role === 'admin') {
+          handleAdminPinPrompt(existing, 'login');
+          return;
+        }
         currentUser.value = { ...existing };
       } else {
-        // Create new operational staff
+        // Create new staff
+        const isAdm = email.includes('admin');
         const newUser = {
           email,
           nombre: email.split('@')[0],
-          role: email.includes('admin') ? 'admin' : 'operativo'
+          role: isAdm ? 'admin' : 'vendedor'
         };
         staffUsers.value.push(newUser);
+        if (isAdm) {
+          handleAdminPinPrompt(newUser, 'login');
+          return;
+        }
         currentUser.value = newUser;
       }
       saveState();
@@ -2505,6 +2643,10 @@ createApp({
     };
 
     const switchUser = (user) => {
+      if (user.role === 'admin') {
+        handleAdminPinPrompt(user, 'switch');
+        return;
+      }
       currentUser.value = { ...user };
       openUserMenuModal.value = false;
       saveState();
@@ -3392,6 +3534,11 @@ createApp({
       webhookStatusSuccess,
       copiedScript,
       appsScriptTemplate: APPS_SCRIPT_TEMPLATE,
+      adminPinModalOpen,
+      adminPinInput,
+      adminPinError,
+      submitAdminPin,
+      closeAdminPinModal,
       openUserMenuModal,
       businessModalOpen,
       isEditingBusiness,
