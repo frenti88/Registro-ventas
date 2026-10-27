@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#F6F6F6]">
+<html lang="es" class="min-h-screen bg-[#F6F6F6]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -123,11 +123,22 @@
       touch-action: manipulation;
     }
 
+    html {
+      min-height: 100%;
+      background-color: var(--uber-bg);
+    }
+
     body {
+      min-height: 100vh;
       background-color: var(--uber-bg);
       color: var(--uber-black);
       -webkit-font-smoothing: antialiased;
       overscroll-behavior-y: none;
+    }
+
+    #app {
+      min-height: 100vh;
+      background-color: var(--uber-white);
     }
 
     /* Target ergonomic minimum 48px */
@@ -242,9 +253,9 @@
     }
   </style>
 </head>
-<body class="h-full flex flex-col justify-between selection:bg-black selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-black selection:text-white">
 
-<div id="app" class="min-h-full flex flex-col w-full max-w-md mx-auto bg-white shadow-xl relative pb-28 md:border-x md:border-[#E2E2E2]">
+<div id="app" class="min-h-screen flex flex-col w-full max-w-md mx-auto bg-white shadow-xl relative pb-36 md:border-x md:border-gray-200">
 
   <!-- TOP HEADER / STATUS BAR -->
   <header class="sticky top-0 z-40 bg-black text-white px-4 py-3.5 border-b border-gray-800 flex items-center justify-between">
