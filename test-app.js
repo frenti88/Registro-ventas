@@ -10,7 +10,7 @@ async function runE2ETests() {
     '--remote-allow-origins=*',
     '--user-data-dir=/tmp/chrome-test-profile-' + Date.now(),
     '--disable-gpu',
-    'file://' + process.cwd() + '/index.html'
+    'http://localhost:8080/index.html'
   ]);
   chrome.stderr.on('data', d => {
     const s = d.toString();
@@ -19,11 +19,11 @@ async function runE2ETests() {
 
   // Wait for Chrome to be ready with retries
   let pages = null;
-  for (let attempt = 0; attempt < 15; attempt++) {
+  for (let attempt = 0; attempt < 20; attempt++) {
     await new Promise(r => setTimeout(r, 500));
     try {
       pages = await new Promise((resolve, reject) => {
-        const req = http.get(`http://127.0.0.1:${PORT}/json`, (res) => {
+        const req = http.get(`http://127.0.0.1:${PORT}/json/list`, (res) => {
           let data = '';
           res.on('data', chunk => data += chunk);
           res.on('end', () => {
@@ -32,7 +32,7 @@ async function runE2ETests() {
         });
         req.on('error', reject);
       });
-      if (pages && pages.length) break;
+      if (pages && pages.find(p => p.type === 'page' || p.url.includes('index.html'))) break;
     } catch (e) {}
   }
 
@@ -42,7 +42,7 @@ async function runE2ETests() {
     process.exit(1);
   }
 
-  const appPage = pages.find(p => p.url.includes('index.html')) || pages[0];
+  const appPage = pages.find(p => p.type === 'page' && p.url.includes('index.html')) || pages.find(p => p.type === 'page') || pages[0];
   if (!appPage) {
     console.error('❌ Could not find index.html page');
     chrome.kill();

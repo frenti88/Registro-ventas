@@ -1272,10 +1272,18 @@
               </button>
               <button 
                 @click="testWebhookConnection" 
-                :disabled="isTestingWebhook || !webhookUrl"
+                :disabled="isTestingWebhook || isRepairingWebhook || !webhookUrl"
                 class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale"
               >
                 {{ isTestingWebhook ? 'Probando...' : 'Probar conexión' }}
+              </button>
+              <button 
+                @click="repairGoogleSheets" 
+                :disabled="isTestingWebhook || isRepairingWebhook || !webhookUrl"
+                class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale"
+                title="Estandarizar y alinear las columnas en Google Sheets"
+              >
+                {{ isRepairingWebhook ? 'Alineando...' : 'Alinear columnas' }}
               </button>
             </div>
 
@@ -1284,15 +1292,24 @@
             </p>
 
             <!-- Apps Script Ready-to-use Code Accordion -->
-            <div class="pt-2 border-t border-gray-100">
-              <div class="flex items-center justify-between mb-1.5">
+            <div class="pt-2 border-t border-gray-100 space-y-2">
+              <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-bold text-gray-700">Código oficial para Google Sheets:</span>
                 <button @click="copyAppsScriptCode" class="text-xs font-bold underline text-black">
                   {{ copiedScript ? '¡Copiado! ✓' : 'Copiar código' }}
                 </button>
               </div>
-              <p class="text-[11px] text-gray-500 mb-2">
-                Pega este código en <em>Extensiones > Apps Script</em> de tu Google Sheet y despliega como <em>Aplicación Web (Acceso: Cualquier persona)</em>. Incluye LockService para concurrencia multi-vendedor y pestañas separadas por vendedor.
+              <div class="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-700 space-y-1">
+                <p class="font-bold text-black flex items-center space-x-1">
+                  <span>📊</span>
+                  <span>10 columnas estandarizadas en todas las hojas (A hasta J):</span>
+                </p>
+                <p class="font-mono text-[10px] text-gray-600 leading-relaxed">
+                  1. ID de registro | 2. Fecha | 3. Hora | 4. Emprendimiento | 5. Producto | 6. Unidades | 7. Precio unitario ($ COP) | 8. Valor total ($ COP) | 9. Método de pago | 10. Vendedor
+                </p>
+              </div>
+              <p class="text-[11px] text-gray-500">
+                Pega este código en <em>Extensiones > Apps Script</em> de tu Google Sheet y despliega como <em>Aplicación Web (Acceso: Cualquier persona)</em>. Incluye auto-reparación y alineación idéntica en 'Todas las ventas', 'Daniel', 'Jhon', 'Julian' y 'Administrador'.
               </p>
               <pre class="bg-gray-900 text-gray-200 p-3 rounded-xl text-[10px] font-mono overflow-x-auto max-h-48 leading-relaxed">{{ appsScriptTemplate }}</pre>
             </div>
@@ -2043,11 +2060,36 @@ const APPS_SCRIPT_TEMPLATE = `/**
  * VENTAS DE LA TIENDITA - SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE SHEETS
  * Documento: https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit
  *
+ * Estructura de Columnas Estandarizada en TODAS las hojas (A hasta J):
+ * 1. ID de registro
+ * 2. Fecha
+ * 3. Hora
+ * 4. Emprendimiento
+ * 5. Producto
+ * 6. Unidades
+ * 7. Precio unitario ($ COP)
+ * 8. Valor total ($ COP)
+ * 9. Método de pago
+ * 10. Vendedor
+ *
  * Registra cada venta en:
- * 1. "Todas las ventas": Consolidado general de todos los vendedores.
- * 2. Pestañas individuales para cada vendedor: "Daniel", "Jhon", "Julian".
+ * - "Todas las ventas": Consolidado general de todos los vendedores.
+ * - Pestañas individuales para cada vendedor: "Daniel", "Jhon", "Julian", "Administrador".
  * ===================================================================
  */
+
+var STANDARD_HEADERS = [
+  "ID de registro",
+  "Fecha",
+  "Hora",
+  "Emprendimiento",
+  "Producto",
+  "Unidades",
+  "Precio unitario ($ COP)",
+  "Valor total ($ COP)",
+  "Método de pago",
+  "Vendedor"
+];
 
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2055,7 +2097,8 @@ function doGet(e) {
     status: 'online',
     documento: ss.getName(),
     mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas.',
-    vendedores: ['Daniel', 'Jhon', 'Julian'],
+    columnas: STANDARD_HEADERS,
+    vendedores: ['Daniel', 'Jhon', 'Julian', 'Administrador'],
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -2071,12 +2114,8 @@ function getOrCreateMasterSheet(ss) {
     } else {
       sheet = ss.insertSheet(name, 0);
     }
-    var headers = [
-      "ID de registro", "Fecha", "Hora", "Vendedor",
-      "Emprendimiento", "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
-    ];
-    sheet.appendRow(headers);
-    var hRange = sheet.getRange(1, 1, 1, headers.length);
+    sheet.appendRow(STANDARD_HEADERS);
+    var hRange = sheet.getRange(1, 1, 1, STANDARD_HEADERS.length);
     hRange.setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
     sheet.setFrozenRows(1);
   }
@@ -2088,22 +2127,147 @@ function getOrCreateSellerSheet(ss, sellerName) {
   var sheet = ss.getSheetByName(clean);
   if (!sheet) {
     sheet = ss.insertSheet(clean);
-    var headers = [
-      "ID de registro", "Fecha", "Hora", "Emprendimiento",
-      "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
-    ];
-    sheet.appendRow(headers);
-    var hRange = sheet.getRange(1, 1, 1, headers.length);
+    sheet.appendRow(STANDARD_HEADERS);
+    var hRange = sheet.getRange(1, 1, 1, STANDARD_HEADERS.length);
     hRange.setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
     sheet.setFrozenRows(1);
   }
   return sheet;
 }
 
+/**
+ * Función de mantenimiento: estandariza y alinea las columnas en 'Todas las ventas'
+ * y en las pestañas individuales de vendedores, reparando filas desplazadas por correos u órdenes antiguos.
+ */
+function estandarizarYRepararHojas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var master = ss.getSheetByName("Todas las ventas");
+
+  if (master && master.getLastRow() >= 1) {
+    var lastRow = master.getLastRow();
+    var lastCol = Math.max(master.getLastColumn(), 11);
+    var rawValues = master.getRange(1, 1, lastRow, lastCol).getValues();
+    var cleanedData = [];
+
+    for (var r = 1; r < rawValues.length; r++) {
+      var row = rawValues[r];
+      var regId = String(row[0] || '').trim();
+      if (!regId) continue;
+
+      var fecha = row[1];
+      var hora = row[2];
+      var seller = '';
+      var comercio = '';
+      var producto = '';
+      var unidades = 0;
+      var precio = 0;
+      var total = 0;
+      var metodo = '';
+
+      // Caso 1: Correo electrónico insertado en columna E (row[4])
+      if (String(row[4] || '').indexOf('@') !== -1) {
+        seller = String(row[3] || '').trim();
+        comercio = String(row[5] || '').trim();
+        producto = String(row[6] || '').trim();
+        unidades = Number(row[7] || 0);
+        precio = Number(row[8] || 0);
+        total = Number(row[9] || 0);
+        metodo = String(row[10] || '').trim();
+      }
+      // Caso 2: Formato previo de 10 columnas donde 'Vendedor' estaba en columna D (row[3])
+      else if (String(rawValues[0][3] || '').toLowerCase() === 'vendedor') {
+        seller = String(row[3] || '').trim();
+        comercio = String(row[4] || '').trim();
+        producto = String(row[5] || '').trim();
+        unidades = Number(row[6] || 0);
+        precio = Number(row[7] || 0);
+        total = Number(row[8] || 0);
+        metodo = String(row[9] || '').trim();
+      }
+      // Caso 3: Ya en orden estándar
+      else {
+        comercio = String(row[3] || '').trim();
+        producto = String(row[4] || '').trim();
+        unidades = Number(row[5] || 0);
+        precio = Number(row[6] || 0);
+        total = Number(row[7] || 0);
+        metodo = String(row[8] || '').trim();
+        seller = String(row[9] || '').trim();
+      }
+
+      cleanedData.push([
+        regId, fecha, hora, comercio, producto, unidades, precio, total, metodo, seller
+      ]);
+    }
+
+    master.clearContents();
+    master.clearFormats();
+    master.getRange(1, 1, 1, STANDARD_HEADERS.length).setValues([STANDARD_HEADERS])
+      .setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
+    master.setFrozenRows(1);
+
+    if (cleanedData.length > 0) {
+      master.getRange(2, 1, cleanedData.length, STANDARD_HEADERS.length).setValues(cleanedData);
+      master.getRange(2, 6, cleanedData.length, 1).setNumberFormat("#,##0");
+      master.getRange(2, 7, cleanedData.length, 2).setNumberFormat('"$"#,##0');
+    }
+  }
+
+  // Estandarizar pestañas de vendedores
+  var officialSellers = ["Daniel", "Jhon", "Julian", "Administrador"];
+  officialSellers.forEach(function(sName) {
+    var sSheet = ss.getSheetByName(sName);
+    if (sSheet && sSheet.getLastRow() >= 1) {
+      var sLastRow = sSheet.getLastRow();
+      var sLastCol = Math.max(sSheet.getLastColumn(), 10);
+      var sValues = sSheet.getRange(1, 1, sLastRow, sLastCol).getValues();
+      var sCleaned = [];
+
+      for (var s = 1; s < sValues.length; s++) {
+        var sRow = sValues[s];
+        var sRegId = String(sRow[0] || '').trim();
+        if (!sRegId) continue;
+
+        var sFecha = sRow[1];
+        var sHora = sRow[2];
+        var sComercio = sRow[3];
+        var sProducto = sRow[4];
+        var sUnidades = Number(sRow[5] || 0);
+        var sPrecio = Number(sRow[6] || 0);
+        var sTotal = Number(sRow[7] || (sUnidades * sPrecio));
+        var sMetodo = String(sRow[8] || 'Efectivo').trim();
+        var sSeller = String(sRow[9] || sName).trim();
+
+        sCleaned.push([
+          sRegId, sFecha, sHora, sComercio, sProducto, sUnidades, sPrecio, sTotal, sMetodo, sSeller
+        ]);
+      }
+
+      sSheet.clearContents();
+      sSheet.clearFormats();
+      sSheet.getRange(1, 1, 1, STANDARD_HEADERS.length).setValues([STANDARD_HEADERS])
+        .setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
+      sSheet.setFrozenRows(1);
+
+      if (sCleaned.length > 0) {
+        sSheet.getRange(2, 1, sCleaned.length, STANDARD_HEADERS.length).setValues(sCleaned);
+        sSheet.getRange(2, 6, sCleaned.length, 1).setNumberFormat("#,##0");
+        sSheet.getRange(2, 7, sCleaned.length, 2).setNumberFormat('"$"#,##0');
+      }
+    } else {
+      getOrCreateSellerSheet(ss, sName);
+    }
+  });
+
+  return {
+    status: 'success',
+    message: 'Hojas estandarizadas y alineadas con éxito (A-J en todas las pestañas).'
+  };
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
-    // Espera hasta 30 segundos si hay múltiples vendedores enviando al mismo tiempo
     lock.waitLock(30000);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -2123,15 +2287,16 @@ function doPost(e) {
     var payload = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // 1. Verificación de conectividad (PING) y creación de hojas
-    if (payload.action === 'PING') {
+    // 1. Verificación de conectividad (PING) o reparación de hojas (REPAIR)
+    if (payload.action === 'PING' || payload.action === 'REPAIR') {
       getOrCreateMasterSheet(ss);
-      ["Daniel", "Jhon", "Julian"].forEach(function(v) {
+      ["Daniel", "Jhon", "Julian", "Administrador"].forEach(function(v) {
         getOrCreateSellerSheet(ss, v);
       });
+      estandarizarYRepararHojas();
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        message: 'Conexión exitosa. Hojas configuradas: Todas las ventas, Daniel, Jhon, Julian'
+        message: 'Conexión exitosa y hojas estandarizadas: Todas las ventas, Daniel, Jhon, Julian, Administrador.'
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -2140,19 +2305,20 @@ function doPost(e) {
     var sellerName = (payload.usuarioNombre || payload.usuario || "Sin vendedor").toString().trim();
     var sellerSheet = getOrCreateSellerSheet(ss, sellerName);
 
-    // Asegurar que las hojas de Daniel, Jhon y Julian existen en el libro
-    ["Daniel", "Jhon", "Julian"].forEach(function(v) {
+    ["Daniel", "Jhon", "Julian", "Administrador"].forEach(function(v) {
       getOrCreateSellerSheet(ss, v);
     });
 
-    // 3. Deduplicación por ID de registro
-    var masterExistingIds = {};
+    // 3. Deduplicación por combinación ID de registro + Vendedor
+    var masterExistingKeys = {};
     var masterLastRow = masterSheet.getLastRow();
     if (masterLastRow > 1) {
       var mIds = masterSheet.getRange(2, 1, masterLastRow - 1, 1).getValues();
+      var mSellers = masterSheet.getRange(2, 10, masterLastRow - 1, 1).getValues();
       for (var i = 0; i < mIds.length; i++) {
         var idStr = String(mIds[i][0]).trim();
-        if (idStr) masterExistingIds[idStr] = true;
+        var sStr = String(mSellers[i][0] || '').trim();
+        if (idStr) masterExistingKeys[idStr + '_' + sStr] = true;
       }
     }
 
@@ -2166,7 +2332,7 @@ function doPost(e) {
       }
     }
 
-    // 4. Preparar filas a insertar
+    // 4. Preparar filas a insertar con columnas estandarizadas (A a J)
     var rowsToInsertMaster = [];
     var rowsToInsertSeller = [];
     var items = payload.items || [];
@@ -2178,53 +2344,46 @@ function doPost(e) {
       var precio = Number(it.precioUnitario || 0);
       var total = Number(it.subtotal || (unidades * precio));
       var metodo = String(it.metodoPago || 'Efectivo').trim();
+      var masterKey = regId + '_' + sellerName;
 
-      if (!masterExistingIds[regId]) {
-        rowsToInsertMaster.push([
-          regId,
-          payload.fecha || '',
-          payload.hora || '',
-          sellerName,
-          payload.comercio || '',
-          it.producto || '',
-          unidades,
-          precio,
-          total,
-          metodo
-        ]);
-        masterExistingIds[regId] = true;
+      var standardRow = [
+        regId,
+        payload.fecha || '',
+        payload.hora || '',
+        payload.comercio || '',
+        it.producto || '',
+        unidades,
+        precio,
+        total,
+        metodo,
+        sellerName
+      ];
+
+      if (!masterExistingKeys[masterKey]) {
+        rowsToInsertMaster.push(standardRow);
+        masterExistingKeys[masterKey] = true;
       }
 
       if (!sellerExistingIds[regId]) {
-        rowsToInsertSeller.push([
-          regId,
-          payload.fecha || '',
-          payload.hora || '',
-          payload.comercio || '',
-          it.producto || '',
-          unidades,
-          precio,
-          total,
-          metodo
-        ]);
+        rowsToInsertSeller.push(standardRow);
         sellerExistingIds[regId] = true;
       }
     }
 
-    // 5. Escribir y formatear en hoja maestra
+    // 5. Escribir y formatear en hoja maestra (10 columnas: A a J)
     if (rowsToInsertMaster.length > 0) {
       var mStart = masterLastRow + 1;
       var mCount = rowsToInsertMaster.length;
       masterSheet.getRange(mStart, 1, mCount, 10).setValues(rowsToInsertMaster);
-      masterSheet.getRange(mStart, 7, mCount, 1).setNumberFormat("#,##0");
-      masterSheet.getRange(mStart, 8, mCount, 2).setNumberFormat('"$"#,##0');
+      masterSheet.getRange(mStart, 6, mCount, 1).setNumberFormat("#,##0");
+      masterSheet.getRange(mStart, 7, mCount, 2).setNumberFormat('"$"#,##0');
     }
 
-    // 6. Escribir y formatear en hoja del vendedor
+    // 6. Escribir y formatear en hoja del vendedor (10 columnas: A a J)
     if (rowsToInsertSeller.length > 0) {
       var sStart = sellerLastRow + 1;
       var sCount = rowsToInsertSeller.length;
-      sellerSheet.getRange(sStart, 1, sCount, 9).setValues(rowsToInsertSeller);
+      sellerSheet.getRange(sStart, 1, sCount, 10).setValues(rowsToInsertSeller);
       sellerSheet.getRange(sStart, 6, sCount, 1).setNumberFormat("#,##0");
       sellerSheet.getRange(sStart, 7, sCount, 2).setNumberFormat('"$"#,##0');
     }
@@ -3274,13 +3433,13 @@ createApp({
             'ID de registro': it.registroId,
             'Fecha': v.fechaBogota,
             'Hora': v.horaBogota,
-            'Vendedor': v.usuarioNombre || v.usuarioEmail,
             'Emprendimiento': v.comercioNombre,
             'Producto': it.producto,
             'Unidades vendidas': it.unidades,
             'Precio unitario': it.precioUnitario,
             'Valor total': it.subtotal,
-            'Método de pago': it.metodoPago
+            'Método de pago': it.metodoPago,
+            'Vendedor': v.usuarioNombre || v.usuarioEmail
           });
         });
       });
@@ -3293,19 +3452,19 @@ createApp({
       if (window.XLSX) {
         const wb = XLSX.utils.book_new();
 
-        // 1. Hoja consolidada: "Todas las ventas"
+        // 1. Hoja consolidada: "Todas las ventas" (10 columnas idénticas: A hasta J)
         const defaultMasterHeader = [
           {
             'ID de registro': '',
             'Fecha': '',
             'Hora': '',
-            'Vendedor': '',
             'Emprendimiento': '',
             'Producto': '',
             'Unidades vendidas': '',
             'Precio unitario': '',
             'Valor total': '',
-            'Método de pago': ''
+            'Método de pago': '',
+            'Vendedor': ''
           }
         ];
         const masterData = rows.length > 0 ? rows : defaultMasterHeader;
@@ -3326,7 +3485,8 @@ createApp({
               'Unidades vendidas': r['Unidades vendidas'],
               'Precio unitario': r['Precio unitario'],
               'Valor total': r['Valor total'],
-              'Método de pago': r['Método de pago']
+              'Método de pago': r['Método de pago'],
+              'Vendedor': r['Vendedor'] || sName
             }));
 
           const sData = sellerRows.length > 0 ? sellerRows : [
@@ -3339,7 +3499,8 @@ createApp({
               'Unidades vendidas': '',
               'Precio unitario': '',
               'Valor total': '',
-              'Método de pago': ''
+              'Método de pago': '',
+              'Vendedor': sName
             }
           ];
           const wsSeller = XLSX.utils.json_to_sheet(sData);
@@ -3362,7 +3523,8 @@ createApp({
               'Unidades vendidas': r['Unidades vendidas'],
               'Precio unitario': r['Precio unitario'],
               'Valor total': r['Valor total'],
-              'Método de pago': r['Método de pago']
+              'Método de pago': r['Método de pago'],
+              'Vendedor': r['Vendedor'] || oName
             }));
           if (oRows.length > 0) {
             const wsOther = XLSX.utils.json_to_sheet(oRows);
@@ -3371,7 +3533,7 @@ createApp({
         });
 
         XLSX.writeFile(wb, "Ventas_de_la_Tiendita.xlsx");
-        showToast('Archivo Excel descargado con hojas para Daniel, Jhon y Julian', 'success');
+        showToast('Archivo Excel descargado con columnas estandarizadas en todas las hojas', 'success');
       } else {
         // Fallback to CSV if SheetJS unavailable
         exportToCSV();
@@ -3386,8 +3548,8 @@ createApp({
       }
 
       const headers = [
-        'ID de registro', 'Fecha', 'Hora', 'Vendedor', 'Emprendimiento',
-        'Producto', 'Unidades vendidas', 'Precio unitario', 'Valor total', 'Método de pago'
+        'ID de registro', 'Fecha', 'Hora', 'Emprendimiento', 'Producto',
+        'Unidades vendidas', 'Precio unitario', 'Valor total', 'Método de pago', 'Vendedor'
       ];
 
       const csvContent = [
@@ -3396,13 +3558,13 @@ createApp({
           `"${r['ID de registro']}"`,
           `"${r['Fecha']}"`,
           `"${r['Hora']}"`,
-          `"${r['Vendedor']}"`,
           `"${r['Emprendimiento']}"`,
           `"${r['Producto']}"`,
           r['Unidades vendidas'],
           r['Precio unitario'],
           r['Valor total'],
-          `"${r['Método de pago']}"`
+          `"${r['Método de pago']}"`,
+          `"${r['Vendedor']}"`
         ].join(','))
       ].join('\n');
 
@@ -3456,6 +3618,37 @@ createApp({
         showToast('Error al conectar con Google Sheets', 'error');
       } finally {
         isTestingWebhook.value = false;
+      }
+    };
+
+    const isRepairingWebhook = ref(false);
+    const repairGoogleSheets = async () => {
+      if (!webhookUrl.value) return;
+      isRepairingWebhook.value = true;
+      webhookStatusMessage.value = '';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      try {
+        await fetch(webhookUrl.value, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'REPAIR', timestamp: new Date().toISOString() }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        webhookStatusSuccess.value = true;
+        webhookStatusMessage.value = '✓ Solicitud de alineación enviada al webhook de Google Apps Script.';
+        showToast('Columnas estandarizadas en Google Sheets', 'success');
+      } catch (err) {
+        clearTimeout(timeoutId);
+        webhookStatusSuccess.value = false;
+        webhookStatusMessage.value = '✕ Error al enviar solicitud de alineación: ' + err.toString();
+        showToast('Error al alinear columnas', 'error');
+      } finally {
+        isRepairingWebhook.value = false;
       }
     };
 
@@ -3530,6 +3723,7 @@ createApp({
       adminFilterSeller,
       adminFilterBusiness,
       isTestingWebhook,
+      isRepairingWebhook,
       webhookStatusMessage,
       webhookStatusSuccess,
       copiedScript,
@@ -3592,6 +3786,7 @@ createApp({
       exportToCSV,
       saveWebhookUrl,
       testWebhookConnection,
+      repairGoogleSheets,
       copyAppsScriptCode,
       firestoreConfig,
       firestoreEnabled,
