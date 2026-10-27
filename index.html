@@ -2730,7 +2730,9 @@ createApp({
     const visitas = ref([]);
     const pendingQueue = ref([]);
     const recentVisitsByUser = ref({});
-    const webhookUrl = ref('https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec');
+    const OFFICIAL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzYXpL80LuIWgdeE_I0cX1JUHkhlgpYSVt0gf-Yw_hPFSTC_BgMlZGRCVIuz-q8LvN0Fg/exec';
+    const OLD_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec';
+    const webhookUrl = ref(OFFICIAL_WEBHOOK_URL);
 
     // Firestore Dual Persistence state
     const firestoreConfig = ref({
@@ -2906,7 +2908,12 @@ createApp({
         }
 
         const storedWebhook = localStorage.getItem('rm_webhook_url');
-        webhookUrl.value = storedWebhook || 'https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec';
+        if (!storedWebhook || storedWebhook === OLD_WEBHOOK_URL) {
+          webhookUrl.value = OFFICIAL_WEBHOOK_URL;
+          localStorage.setItem('rm_webhook_url', OFFICIAL_WEBHOOK_URL);
+        } else {
+          webhookUrl.value = storedWebhook;
+        }
 
         const storedFirestore = localStorage.getItem('rm_firestore_config');
         if (storedFirestore) {
