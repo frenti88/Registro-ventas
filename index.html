@@ -2273,9 +2273,24 @@ var BUSINESS_HEADERS = [
 
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var master = ss.getSheetByName("Todas las ventas");
+  var maxSeq = 0;
+  if (master && master.getLastRow() > 1) {
+    var ids = master.getRange(2, 1, master.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      var match = String(ids[i][0]).match(/RV-(\d+)/i);
+      if (match) {
+        var num = parseInt(match[1], 10);
+        if (num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+
   return ContentService.createTextOutput(JSON.stringify({
     status: 'online',
     documento: ss.getName(),
+    maxSeq: maxSeq,
+    nextSeq: maxSeq + 1,
     mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas y catálogo.',
     columnas: STANDARD_HEADERS,
     vendedores: ['Daniel', 'Jhon', 'Julian', 'Administrador'],
@@ -2594,42 +2609,47 @@ function doPost(e) {
       getOrCreateSellerSheet(ss, v);
     });
 
-    // 3. Deduplicación por combinación ID de registro + Vendedor
-    var masterExistingKeys = {};
+    // 4. Mapear IDs existentes y calcular el número consecutivo más alto (maxSeq)
+    var masterExistingIds = {};
     var masterLastRow = masterSheet.getLastRow();
+    var maxSeq = 0;
     if (masterLastRow > 1) {
       var mIds = masterSheet.getRange(2, 1, masterLastRow - 1, 1).getValues();
-      var mSellers = masterSheet.getRange(2, 10, masterLastRow - 1, 1).getValues();
       for (var i = 0; i < mIds.length; i++) {
         var idStr = String(mIds[i][0]).trim();
-        var sStr = String(mSellers[i][0] || '').trim();
-        if (idStr) masterExistingKeys[idStr + '_' + sStr] = true;
+        if (idStr) {
+          masterExistingIds[idStr] = true;
+          var match = idStr.match(/RV-(\d+)/i);
+          if (match) {
+            var n = parseInt(match[1], 10);
+            if (n > maxSeq) maxSeq = n;
+          }
+        }
       }
     }
 
-    var sellerExistingIds = {};
-    var sellerLastRow = sellerSheet.getLastRow();
-    if (sellerLastRow > 1) {
-      var sIds = sellerSheet.getRange(2, 1, sellerLastRow - 1, 1).getValues();
-      for (var k = 0; k < sIds.length; k++) {
-        var sIdStr = String(sIds[k][0]).trim();
-        if (sIdStr) sellerExistingIds[sIdStr] = true;
-      }
-    }
-
-    // 4. Preparar filas a insertar con columnas estandarizadas (A a J)
+    // 5. Preparar filas a insertar con columnas estandarizadas (A a J)
+    // GARANTÍA MULTI-DISPOSITIVO: Si dos teléfonos envían el mismo ID (ej. RV-0001),
+    // NUNCA se descarta la venta; se le auto-asigna el siguiente consecutivo libre en la hoja.
     var rowsToInsertMaster = [];
     var rowsToInsertSeller = [];
     var items = payload.items || [];
 
     for (var j = 0; j < items.length; j++) {
       var it = items[j];
-      var regId = String(it.registroId || payload.visitaId || ("RV-" + Utilities.formatString("%04d", j + 1))).trim();
+      var regId = String(it.registroId || payload.visitaId || "").trim();
       var unidades = Number(it.unidades || 0);
       var precio = Number(it.precioUnitario || 0);
       var total = Number(it.subtotal || (unidades * precio));
       var metodo = String(it.metodoPago || 'Efectivo').trim();
-      var masterKey = regId + '_' + sellerName;
+
+      // Si el ID ya existe en la hoja (colisión entre celulares distintos),
+      // auto-asignamos el siguiente consecutivo para garantizar que NINGUNA venta se pierda
+      if (!regId || masterExistingIds[regId]) {
+        maxSeq++;
+        regId = "RV-" + Utilities.formatString("%04d", maxSeq);
+      }
+      masterExistingIds[regId] = true;
 
       var standardRow = [
         regId,
@@ -2644,18 +2664,11 @@ function doPost(e) {
         sellerName
       ];
 
-      if (!masterExistingKeys[masterKey]) {
-        rowsToInsertMaster.push(standardRow);
-        masterExistingKeys[masterKey] = true;
-      }
-
-      if (!sellerExistingIds[regId]) {
-        rowsToInsertSeller.push(standardRow);
-        sellerExistingIds[regId] = true;
-      }
+      rowsToInsertMaster.push(standardRow);
+      rowsToInsertSeller.push(standardRow);
     }
 
-    // 5. Escribir y formatear en hoja maestra (10 columnas: A a J)
+    // 6. Escribir y formatear en hoja maestra (10 columnas: A a J)
     if (rowsToInsertMaster.length > 0) {
       var mStart = masterLastRow + 1;
       var mCount = rowsToInsertMaster.length;
@@ -2664,7 +2677,8 @@ function doPost(e) {
       masterSheet.getRange(mStart, 7, mCount, 2).setNumberFormat('"$"#,##0');
     }
 
-    // 6. Escribir y formatear en hoja del vendedor (10 columnas: A a J)
+    // 7. Escribir y formatear en hoja del vendedor (10 columnas: A a J)
+    var sellerLastRow = sellerSheet.getLastRow();
     if (rowsToInsertSeller.length > 0) {
       var sStart = sellerLastRow + 1;
       var sCount = rowsToInsertSeller.length;
@@ -2677,6 +2691,8 @@ function doPost(e) {
       status: 'success',
       visitaId: payload.visitaId,
       vendedor: sellerName,
+      maxSeq: maxSeq,
+      nextSeq: maxSeq + 1,
       registrosInsertados: rowsToInsertMaster.length
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -2932,14 +2948,36 @@ createApp({
       }
     };
 
+    /**
+     * Sincroniza el contador consecutivo (RV-XXXX) con Google Sheets para que
+     * múltiples celulares compartan el número correcto y no colisionen.
+     */
+    const syncCloudSequence = async () => {
+      if (!isOnline.value || !webhookUrl.value) return;
+      try {
+        const res = await fetch(webhookUrl.value);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data.maxSeq === 'number' && data.maxSeq > lastRegSeq.value) {
+            lastRegSeq.value = data.maxSeq;
+            localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+          }
+        }
+      } catch (err) {
+        // Fallback silencioso si no hay conexión al iniciar
+      }
+    };
+
     onMounted(() => {
       loadFromLocalStorage();
       initSeenVisitsForUser();
+      syncCloudSequence();
 
       // Network listeners
       window.addEventListener('online', () => {
         isOnline.value = true;
         syncPendingQueue();
+        syncCloudSequence();
       });
       window.addEventListener('offline', () => {
         isOnline.value = false;
