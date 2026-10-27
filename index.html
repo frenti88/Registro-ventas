@@ -218,6 +218,23 @@
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shake 0.35s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
     /* Safe bottom inset for iPhone Home Bar */
     .pb-safe {
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
@@ -259,14 +276,24 @@
 
   <!-- TOP HEADER / STATUS BAR -->
   <header class="sticky top-0 z-40 bg-black text-white px-4 py-3.5 border-b border-gray-800 flex items-center justify-between">
-    <div>
+    <div class="flex items-center space-x-2">
+      <button 
+        v-if="adminPinScreenOpen" 
+        @click="closeAdminPinScreen" 
+        type="button"
+        aria-label="Volver"
+        class="text-gray-300 hover:text-white flex items-center space-x-1.5 text-xs font-bold mr-1 active-scale transition"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        <span>Volver</span>
+      </button>
       <h1 class="text-lg font-bold leading-tight tracking-tight">Ventas de la Tiendita</h1>
     </div>
 
     <!-- Right Controls: User Pill -->
     <div class="flex items-center space-x-2">
       <!-- User Chip or Login Button -->
-      <div v-if="currentUser" class="flex items-center">
+      <div v-if="currentUser && !adminPinScreenOpen" class="flex items-center">
         <button @click="openUserMenuModal = true" class="flex items-center space-x-1.5 bg-gray-900 hover:bg-gray-800 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700 transition">
           <span class="w-2 h-2 rounded-full" :class="currentUser.role === 'admin' ? 'bg-purple-400' : 'bg-blue-400'"></span>
           <span class="truncate max-w-[100px]">{{ currentUser.nombre.split(' ')[0] }}</span>
@@ -295,8 +322,136 @@
   <!-- MAIN VIEW SWITCHER -->
   <main class="flex-1 w-full bg-[#F6F6F6]">
 
+    <!-- PANTALLA DE CÓDIGO DE ACCESO ADMINISTRADOR (DEDICADA) -->
+    <section v-if="adminPinScreenOpen" class="p-4 sm:p-6 space-y-5 animate-fade-in">
+      <!-- Breadcrumb / Back button -->
+      <div>
+        <button 
+          @click="closeAdminPinScreen"
+          type="button"
+          class="inline-flex items-center space-x-1.5 text-xs font-bold text-gray-500 hover:text-black active-scale transition"
+        >
+          <span>←</span>
+          <span>Regresar</span>
+        </button>
+      </div>
+
+      <!-- Icon & Title Header -->
+      <div class="text-center pt-2 pb-1">
+        <div class="w-16 h-16 bg-purple-100 text-purple-900 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm border border-purple-200">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-extrabold text-black tracking-tight">Acceso de Administrador</h2>
+        <p class="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
+          Ingresa el código de seguridad de 4 dígitos para acceder al panel de administración.
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="bg-white p-5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-5">
+        <form @submit.prevent="submitAdminPin" class="space-y-4">
+          <div>
+            <label for="admin-pin-input" class="block text-xs font-bold text-gray-600 mb-2 text-center">
+              Código de acceso (4 dígitos):
+            </label>
+            <div class="relative max-w-[240px] mx-auto">
+              <input 
+                id="admin-pin-input"
+                type="password" 
+                inputmode="numeric" 
+                pattern="[0-9]*" 
+                maxlength="4" 
+                v-model="adminPinInput" 
+                placeholder="••••" 
+                class="w-full h-14 text-center tracking-[0.6em] text-2xl font-mono font-bold rounded-xl border transition outline-none"
+                :class="adminPinError ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-500 animate-shake' : 'border-gray-300 focus:border-black focus:ring-1 focus:ring-black bg-gray-50 text-black'"
+                autocomplete="off"
+                autofocus
+              />
+            </div>
+
+            <!-- Visual Pin Dots (4 dots reflecting entered length) -->
+            <div class="flex items-center justify-center space-x-3 mt-3">
+              <span 
+                v-for="dotIdx in 4" 
+                :key="dotIdx"
+                class="w-3.5 h-3.5 rounded-full border transition-all duration-150"
+                :class="adminPinInput.length >= dotIdx ? 'bg-black border-black scale-110' : 'bg-gray-100 border-gray-300'"
+              ></span>
+            </div>
+
+            <!-- Error message -->
+            <p v-if="adminPinError" class="text-xs text-red-600 font-bold mt-2 text-center flex items-center justify-center space-x-1 animate-fade-in">
+              <span>✕</span>
+              <span>Código incorrecto. Inténtalo de nuevo.</span>
+            </p>
+          </div>
+
+          <!-- Touch Screen Numpad (1-9, 0, Backspace) for 1-Tap Mobile Comfort -->
+          <div class="grid grid-cols-3 gap-2 max-w-[260px] mx-auto pt-1">
+            <button 
+              v-for="num in ['1', '2', '3', '4', '5', '6', '7', '8', '9']" 
+              :key="num"
+              type="button"
+              @click="appendAdminPinDigit(num)"
+              class="h-12 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 active-scale text-base font-bold text-black flex items-center justify-center transition"
+            >
+              {{ num }}
+            </button>
+            <button 
+              type="button"
+              @click="clearAdminPin"
+              class="h-12 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 active-scale text-xs font-semibold text-gray-500 flex items-center justify-center transition"
+            >
+              Borrar
+            </button>
+            <button 
+              type="button"
+              @click="appendAdminPinDigit('0')"
+              class="h-12 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 active-scale text-base font-bold text-black flex items-center justify-center transition"
+            >
+              0
+            </button>
+            <button 
+              type="button"
+              @click="backspaceAdminPin"
+              class="h-12 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 active-scale text-sm font-bold text-gray-700 flex items-center justify-center transition"
+            >
+              ⌫
+            </button>
+          </div>
+
+          <!-- Submit CTA -->
+          <div class="pt-2">
+            <button 
+              type="submit" 
+              :disabled="!adminPinInput"
+              class="w-full h-12 rounded-xl bg-black hover:bg-gray-800 text-white text-xs font-extrabold active-scale transition touch-target flex items-center justify-center space-x-1"
+              :class="!adminPinInput ? 'opacity-50 cursor-not-allowed' : 'shadow-md'"
+            >
+              <span>Acceder como Administrador</span>
+              <span>→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Cancel button -->
+      <div class="text-center">
+        <button 
+          type="button" 
+          @click="closeAdminPinScreen"
+          class="text-xs font-bold text-gray-500 hover:text-black py-2 active-scale transition"
+        >
+          Cancelar y regresar
+        </button>
+      </div>
+    </section>
+
     <!-- PANTALLA A: LOGIN / CUENTAS DE ACCESO RÁPIDO (SI NO HAY USUARIO) -->
-    <section v-if="!currentUser" class="p-4 sm:p-6 space-y-6">
+    <section v-else-if="!currentUser" class="p-4 sm:p-6 space-y-6">
       <div class="text-center pt-4 pb-2">
         <div class="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
           <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1509,7 +1664,7 @@
   <!-- ============================================== -->
   <!-- NAVEGACIÓN GLOBAL PRINCIPAL (PESTAÑAS INFERIORES) -->
   <!-- ============================================== -->
-  <nav v-if="currentUser" aria-label="Navegación principal" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E2E2E2] shadow-lg">
+  <nav v-if="currentUser && !adminPinScreenOpen" aria-label="Navegación principal" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E2E2E2] shadow-lg">
     <div class="max-w-md mx-auto grid" role="tablist" :class="currentUser.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'">
       <!-- Tab 1: Registrar -->
       <button 
@@ -1566,81 +1721,6 @@
   <!-- ============================================== -->
   <!-- MODALES DE APOYO (USUARIO, EDICIÓN, CREACIÓN)  -->
   <!-- ============================================== -->
-
-  <!-- Modal: Código de Acceso para Administrador (PIN 8588) -->
-  <div 
-    v-if="adminPinModalOpen" 
-    role="dialog" 
-    aria-modal="true" 
-    aria-labelledby="admin-pin-title" 
-    class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4"
-  >
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 animate-pop-in">
-      <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-900 flex items-center justify-center text-lg font-bold">
-            🔒
-          </div>
-          <div>
-            <h3 id="admin-pin-title" class="text-base font-extrabold text-black">Acceso de Administrador</h3>
-            <p class="text-xs text-gray-500">Ingresa el código de seguridad</p>
-          </div>
-        </div>
-        <button 
-          type="button" 
-          @click="closeAdminPinModal" 
-          aria-label="Cerrar modal de código" 
-          class="text-gray-500 hover:text-black min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold"
-        >
-          ✕
-        </button>
-      </div>
-
-      <form @submit.prevent="submitAdminPin" class="space-y-4">
-        <div>
-          <label for="admin-pin-input" class="block text-xs font-bold text-gray-600 mb-1.5">
-            Código de acceso (4 dígitos):
-          </label>
-          <input 
-            id="admin-pin-input"
-            type="password" 
-            inputmode="numeric" 
-            pattern="[0-9]*" 
-            maxlength="4" 
-            v-model="adminPinInput" 
-            placeholder="••••" 
-            class="w-full h-14 text-center tracking-[0.6em] text-2xl font-mono font-bold rounded-xl border transition outline-none"
-            :class="adminPinError ? 'border-red-500 bg-red-50 text-red-900 focus:ring-2 focus:ring-red-500' : 'border-gray-300 focus:border-black focus:ring-1 focus:ring-black bg-gray-50 text-black'"
-            autocomplete="off"
-            autofocus
-          />
-          <p v-if="adminPinError" class="text-xs text-red-600 font-bold mt-1.5 flex items-center space-x-1">
-            <span>✕</span>
-            <span>Código incorrecto. Inténtalo de nuevo.</span>
-          </p>
-        </div>
-
-        <div class="flex space-x-3 pt-1">
-          <button 
-            type="button" 
-            @click="closeAdminPinModal" 
-            class="flex-1 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale transition touch-target"
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit" 
-            :disabled="!adminPinInput"
-            class="flex-1 h-12 rounded-xl bg-black hover:bg-gray-800 text-white text-xs font-extrabold active-scale transition touch-target flex items-center justify-center space-x-1"
-            :class="!adminPinInput ? 'opacity-50 cursor-not-allowed' : 'shadow-md'"
-          >
-            <span>Ingresar</span>
-            <span>→</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Modal: Menú de Usuario / Cambio de Perfil -->
   <div v-if="openUserMenuModal" role="dialog" aria-modal="true" aria-labelledby="user-menu-title" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -2480,9 +2560,9 @@ createApp({
     const webhookStatusSuccess = ref(false);
     const copiedScript = ref(false);
 
-    // Modals
+    // Admin Security Screen (PIN 8588)
     const ADMIN_ACCESS_CODE = '8588';
-    const adminPinModalOpen = ref(false);
+    const adminPinScreenOpen = ref(false);
     const adminPinInput = ref('');
     const adminPinError = ref(false);
     const adminPendingUser = ref(null);
@@ -2714,11 +2794,34 @@ createApp({
       adminPinSource.value = source;
       adminPinInput.value = '';
       adminPinError.value = false;
-      adminPinModalOpen.value = true;
+      adminPinScreenOpen.value = true;
+      openUserMenuModal.value = false;
       setTimeout(() => {
         const inp = document.getElementById('admin-pin-input');
         if (inp) inp.focus();
-      }, 150);
+      }, 100);
+    };
+
+    const appendAdminPinDigit = (digit) => {
+      if (adminPinInput.value.length < 4) {
+        adminPinInput.value += String(digit);
+        adminPinError.value = false;
+        if (adminPinInput.value.length === 4) {
+          setTimeout(() => {
+            submitAdminPin();
+          }, 120);
+        }
+      }
+    };
+
+    const backspaceAdminPin = () => {
+      adminPinInput.value = adminPinInput.value.slice(0, -1);
+      adminPinError.value = false;
+    };
+
+    const clearAdminPin = () => {
+      adminPinInput.value = '';
+      adminPinError.value = false;
     };
 
     const submitAdminPin = () => {
@@ -2726,7 +2829,7 @@ createApp({
         const userToLog = adminPendingUser.value || staffUsers.value.find(u => u.role === 'admin') || { email: 'admin@campo.co', nombre: 'Administrador', role: 'admin' };
         currentUser.value = { ...userToLog };
         saveState();
-        adminPinModalOpen.value = false;
+        adminPinScreenOpen.value = false;
         openUserMenuModal.value = false;
         adminPinInput.value = '';
         adminPinError.value = false;
@@ -2745,8 +2848,8 @@ createApp({
       }
     };
 
-    const closeAdminPinModal = () => {
-      adminPinModalOpen.value = false;
+    const closeAdminPinScreen = () => {
+      adminPinScreenOpen.value = false;
       adminPendingUser.value = null;
       adminPinInput.value = '';
       adminPinError.value = false;
@@ -3728,11 +3831,16 @@ createApp({
       webhookStatusSuccess,
       copiedScript,
       appsScriptTemplate: APPS_SCRIPT_TEMPLATE,
-      adminPinModalOpen,
+      adminPinScreenOpen,
+      adminPinModalOpen: adminPinScreenOpen,
       adminPinInput,
       adminPinError,
+      appendAdminPinDigit,
+      backspaceAdminPin,
+      clearAdminPin,
       submitAdminPin,
-      closeAdminPinModal,
+      closeAdminPinScreen,
+      closeAdminPinModal: closeAdminPinScreen,
       openUserMenuModal,
       businessModalOpen,
       isEditingBusiness,
