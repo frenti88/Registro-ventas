@@ -1266,13 +1266,27 @@
         <!-- SUB-TAB 2: EMPRENDIMIENTOS & MATRIZ DE PRODUCTOS -->
         <div v-if="adminSubTab === 'comercios'" class="space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold text-gray-500">Gestión de emprendimientos ({{ comercios.length }})</h3>
-            <button 
-              @click="openAddBusinessModal" 
-              class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
-            >
-              + Nuevo emprendimiento
-            </button>
+            <div>
+              <h3 class="text-xs font-bold text-gray-500">Gestión de emprendimientos ({{ comercios.length }})</h3>
+              <p class="text-[10px] text-gray-400">Edita, agrega o elimina; sincroniza en vivo con Google Sheets</p>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <button 
+                @click="syncCatalogToWebhook(true)" 
+                :disabled="isSyncingCatalog || !webhookUrl"
+                class="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-gray-300 hover:bg-gray-100 flex items-center space-x-1 active-scale transition"
+                title="Sincronizar catálogo con Google Sheets"
+              >
+                <span :class="{'animate-spin': isSyncingCatalog}">🔄</span>
+                <span class="hidden sm:inline">Sincronizar</span>
+              </button>
+              <button 
+                @click="openAddBusinessModal" 
+                class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
+              >
+                + Nuevo
+              </button>
+            </div>
           </div>
 
           <div class="space-y-3">
@@ -1285,12 +1299,21 @@
                 <div>
                   <h4 class="text-base font-bold text-black">{{ c.nombre }}</h4>
                 </div>
-                <button 
-                  @click="openEditBusinessModal(c)" 
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-black hover:text-white transition"
-                >
-                  Editar
-                </button>
+                <div class="flex items-center space-x-1.5">
+                  <button 
+                    @click="openEditBusinessModal(c)" 
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-black hover:text-white transition active-scale"
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    @click="deleteBusiness(c)" 
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition active-scale"
+                    title="Eliminar emprendimiento"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
 
               <!-- Product Matrix Checkboxes for this business -->
@@ -1325,13 +1348,27 @@
         <!-- SUB-TAB 3: PRODUCTOS & PRECIOS -->
         <div v-if="adminSubTab === 'productos'" class="space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold text-gray-500">Catálogo de productos ({{ productos.length }})</h3>
-            <button 
-              @click="openAddProductModal" 
-              class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
-            >
-              + Nuevo producto
-            </button>
+            <div>
+              <h3 class="text-xs font-bold text-gray-500">Catálogo de productos ({{ productos.length }})</h3>
+              <p class="text-[10px] text-gray-400">Edita precios, agrega o elimina; sincroniza en vivo con Google Sheets</p>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <button 
+                @click="syncCatalogToWebhook(true)" 
+                :disabled="isSyncingCatalog || !webhookUrl"
+                class="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-gray-300 hover:bg-gray-100 flex items-center space-x-1 active-scale transition"
+                title="Sincronizar catálogo con Google Sheets"
+              >
+                <span :class="{'animate-spin': isSyncingCatalog}">🔄</span>
+                <span class="hidden sm:inline">Sincronizar</span>
+              </button>
+              <button 
+                @click="openAddProductModal" 
+                class="px-3 py-1.5 bg-black text-white text-xs font-bold rounded-xl active-scale"
+              >
+                + Nuevo
+              </button>
+            </div>
           </div>
 
           <div class="space-y-2.5">
@@ -1345,12 +1382,19 @@
                 <p class="text-14 font-semibold text-gray-700">{{ formatCOP(prod.precio) }}</p>
               </div>
 
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center space-x-1.5">
                 <button 
                   @click="openEditProductModal(prod)" 
-                  class="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-100 hover:bg-black hover:text-white transition active-scale"
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-gray-100 hover:bg-black hover:text-white transition active-scale"
                 >
                   Modificar
+                </button>
+                <button 
+                  @click="deleteProduct(prod)" 
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition active-scale"
+                  title="Eliminar producto"
+                >
+                  Eliminar
                 </button>
               </div>
             </div>
@@ -1418,10 +1462,10 @@
               />
             </div>
 
-            <div class="flex space-x-2 pt-1">
+            <div class="flex flex-wrap gap-2 pt-1">
               <button 
                 @click="saveWebhookUrl" 
-                class="flex-1 h-10 rounded-xl bg-black text-white text-xs font-bold active-scale"
+                class="flex-1 min-w-[100px] h-10 rounded-xl bg-black text-white text-xs font-bold active-scale"
               >
                 Guardar URL
               </button>
@@ -1442,6 +1486,22 @@
               </button>
             </div>
 
+            <!-- Direct Button: Sincronizar catálogo con Google Sheets -->
+            <div class="pt-1">
+              <button 
+                @click="syncCatalogToWebhook(true)" 
+                :disabled="isSyncingCatalog || !webhookUrl"
+                class="w-full h-10 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold active-scale flex items-center justify-center space-x-1.5 transition"
+              >
+                <span :class="{'animate-spin': isSyncingCatalog}">🔄</span>
+                <span>{{ isSyncingCatalog ? 'Sincronizando catálogo con Sheets...' : 'Sincronizar catálogo con Google Sheets' }}</span>
+              </button>
+            </div>
+
+            <p v-if="catalogSyncStatus" class="text-xs font-semibold text-purple-700">
+              {{ catalogSyncStatus }}
+            </p>
+
             <p v-if="webhookStatusMessage" class="text-xs font-semibold" :class="webhookStatusSuccess ? 'text-green-700' : 'text-red-600'">
               {{ webhookStatusMessage }}
             </p>
@@ -1457,14 +1517,17 @@
               <div class="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-700 space-y-1">
                 <p class="font-bold text-black flex items-center space-x-1">
                   <span>📊</span>
-                  <span>10 columnas estandarizadas en todas las hojas (A hasta J):</span>
+                  <span>10 columnas estandarizadas en todas las hojas de ventas (A hasta J) + Hojas automáticas de catálogo:</span>
                 </p>
                 <p class="font-mono text-[10px] text-gray-600 leading-relaxed">
-                  1. ID de registro | 2. Fecha | 3. Hora | 4. Emprendimiento | 5. Producto | 6. Unidades | 7. Precio unitario ($ COP) | 8. Valor total ($ COP) | 9. Método de pago | 10. Vendedor
+                  Ventas: 1. ID de registro | 2. Fecha | 3. Hora | 4. Emprendimiento | 5. Producto | 6. Unidades | 7. Precio unitario ($ COP) | 8. Valor total ($ COP) | 9. Método de pago | 10. Vendedor
+                </p>
+                <p class="font-mono text-[10px] text-purple-700 leading-relaxed font-semibold">
+                  Catálogo: 'Catálogo de Productos' (Emprendimiento, Producto, Precio, Código, Estado) y 'Emprendimientos' (ID, Nombre, Cantidad, Estado)
                 </p>
               </div>
               <p class="text-[11px] text-gray-500">
-                Pega este código en <em>Extensiones > Apps Script</em> de tu Google Sheet y despliega como <em>Aplicación Web (Acceso: Cualquier persona)</em>. Incluye auto-reparación y alineación idéntica en 'Todas las ventas', 'Daniel', 'Jhon', 'Julian' y 'Administrador'.
+                Pega este código en <em>Extensiones > Apps Script</em> de tu Google Sheet y despliega como <em>Aplicación Web (Acceso: Cualquier persona)</em>. Sincroniza automáticamente ventas, modificaciones y eliminaciones de productos o emprendimientos.
               </p>
               <pre class="bg-gray-900 text-gray-200 p-3 rounded-xl text-[10px] font-mono overflow-x-auto max-h-48 leading-relaxed">{{ appsScriptTemplate }}</pre>
             </div>
@@ -1865,8 +1928,17 @@
       </div>
 
       <div class="pt-2 flex space-x-2">
+        <button 
+          v-if="isEditingBusiness" 
+          type="button" 
+          @click="deleteBusiness(businessForm)" 
+          class="px-3 h-10 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold rounded-xl text-xs transition active-scale"
+          title="Eliminar este emprendimiento"
+        >
+          Eliminar
+        </button>
         <button type="button" @click="businessModalOpen = false" class="flex-1 h-10 bg-gray-100 font-bold rounded-xl text-xs">Cancelar</button>
-        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs">Guardar emprendimiento</button>
+        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs active-scale">Guardar</button>
       </div>
     </form>
   </div>
@@ -1895,8 +1967,17 @@
       </div>
 
       <div class="pt-2 flex space-x-2">
+        <button 
+          v-if="isEditingProduct" 
+          type="button" 
+          @click="deleteProduct(productForm)" 
+          class="px-3 h-10 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold rounded-xl text-xs transition active-scale"
+          title="Eliminar este producto"
+        >
+          Eliminar
+        </button>
         <button type="button" @click="productModalOpen = false" class="flex-1 h-10 bg-gray-100 font-bold rounded-xl text-xs">Cancelar</button>
-        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs">Guardar producto</button>
+        <button type="submit" class="flex-1 h-10 bg-black text-white font-bold rounded-xl text-xs active-scale">Guardar</button>
       </div>
     </form>
   </div>
@@ -2134,13 +2215,13 @@ const INSPIRATIONAL_QUOTES = [
   "¡Sembrando oportunidades reales para el desarrollo sostenible de nuestras comunidades!"
 ];
 
-// Official Google Apps Script Webhook Code with LockService & Multi-Seller Tabs
+// Official Google Apps Script Webhook Code with LockService, Multi-Seller Tabs & Auto-Sync Catalog
 const APPS_SCRIPT_TEMPLATE = `/**
  * ===================================================================
  * VENTAS DE LA TIENDITA - SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE SHEETS
  * Documento: https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit
  *
- * Estructura de Columnas Estandarizada en TODAS las hojas (A hasta J):
+ * Estructura de Columnas Estandarizada en Ventas (A hasta J):
  * 1. ID de registro
  * 2. Fecha
  * 3. Hora
@@ -2152,9 +2233,13 @@ const APPS_SCRIPT_TEMPLATE = `/**
  * 9. Método de pago
  * 10. Vendedor
  *
- * Registra cada venta en:
+ * Pestañas Automáticas de Ventas:
  * - "Todas las ventas": Consolidado general de todos los vendedores.
  * - Pestañas individuales para cada vendedor: "Daniel", "Jhon", "Julian", "Administrador".
+ *
+ * Pestañas Automáticas de Catálogo:
+ * - "Catálogo de Productos": Emprendimiento, Nombre del Producto, Precio ($ COP), Código, Estado.
+ * - "Emprendimientos": ID, Nombre del Emprendimiento, Cantidad de Productos, Estado.
  * ===================================================================
  */
 
@@ -2171,12 +2256,27 @@ var STANDARD_HEADERS = [
   "Vendedor"
 ];
 
+var CATALOG_HEADERS = [
+  "Emprendimiento",
+  "Nombre del Producto",
+  "Precio ($ COP)",
+  "Código",
+  "Estado"
+];
+
+var BUSINESS_HEADERS = [
+  "ID",
+  "Nombre del Emprendimiento",
+  "Cantidad de Productos",
+  "Estado"
+];
+
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   return ContentService.createTextOutput(JSON.stringify({
     status: 'online',
     documento: ss.getName(),
-    mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas.',
+    mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas y catálogo.',
     columnas: STANDARD_HEADERS,
     vendedores: ['Daniel', 'Jhon', 'Julian', 'Administrador'],
     timestamp: new Date().toISOString()
@@ -2215,6 +2315,95 @@ function getOrCreateSellerSheet(ss, sellerName) {
   return sheet;
 }
 
+function getOrCreateCatalogSheet(ss) {
+  var name = "Catálogo de Productos";
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(CATALOG_HEADERS);
+    var hRange = sheet.getRange(1, 1, 1, CATALOG_HEADERS.length);
+    hRange.setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getOrCreateBusinessesSheet(ss) {
+  var name = "Emprendimientos";
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(BUSINESS_HEADERS);
+    var hRange = sheet.getRange(1, 1, 1, BUSINESS_HEADERS.length);
+    hRange.setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/**
+ * Sincroniza y reemplaza las pestañas de Catálogo de Productos y Emprendimientos
+ * con la información más reciente enviada desde el panel administrativo.
+ */
+function syncCatalogSheets(ss, payload) {
+  var catSheet = getOrCreateCatalogSheet(ss);
+  var empSheet = getOrCreateBusinessesSheet(ss);
+
+  // 1. Sincronizar Catálogo Detallado de Productos
+  catSheet.clearContents();
+  catSheet.clearFormats();
+  catSheet.getRange(1, 1, 1, CATALOG_HEADERS.length).setValues([CATALOG_HEADERS])
+    .setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
+  catSheet.setFrozenRows(1);
+
+  var catRows = [];
+  var items = payload.catalogoDetallado || [];
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    catRows.push([
+      String(it.comercio || '').trim(),
+      String(it.producto || '').trim(),
+      Number(it.precio || 0),
+      String(it.codigo || '').trim(),
+      String(it.estado || 'Activo').trim()
+    ]);
+  }
+
+  if (catRows.length > 0) {
+    catSheet.getRange(2, 1, catRows.length, CATALOG_HEADERS.length).setValues(catRows);
+    catSheet.getRange(2, 3, catRows.length, 1).setNumberFormat('"$"#,##0');
+  }
+
+  // 2. Sincronizar Listado de Emprendimientos
+  empSheet.clearContents();
+  empSheet.clearFormats();
+  empSheet.getRange(1, 1, 1, BUSINESS_HEADERS.length).setValues([BUSINESS_HEADERS])
+    .setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
+  empSheet.setFrozenRows(1);
+
+  var empRows = [];
+  var comercios = payload.comercios || [];
+  for (var k = 0; k < comercios.length; k++) {
+    var c = comercios[k];
+    empRows.push([
+      String(c.id || '').trim(),
+      String(c.nombre || '').trim(),
+      Number(c.productosCount || 0),
+      String(c.estado || 'Activo').trim()
+    ]);
+  }
+
+  if (empRows.length > 0) {
+    empSheet.getRange(2, 1, empRows.length, BUSINESS_HEADERS.length).setValues(empRows);
+    empSheet.getRange(2, 3, empRows.length, 1).setNumberFormat('#,##0');
+  }
+
+  return {
+    productosCount: catRows.length,
+    comerciosCount: empRows.length
+  };
+}
+
 /**
  * Función de mantenimiento: estandariza y alinea las columnas en 'Todas las ventas'
  * y en las pestañas individuales de vendedores, reparando filas desplazadas por correos u órdenes antiguos.
@@ -2222,6 +2411,10 @@ function getOrCreateSellerSheet(ss, sellerName) {
 function estandarizarYRepararHojas() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var master = ss.getSheetByName("Todas las ventas");
+
+  // Asegurar existencia de hojas de catálogo
+  getOrCreateCatalogSheet(ss);
+  getOrCreateBusinessesSheet(ss);
 
   if (master && master.getLastRow() >= 1) {
     var lastRow = master.getLastRow();
@@ -2341,7 +2534,7 @@ function estandarizarYRepararHojas() {
 
   return {
     status: 'success',
-    message: 'Hojas estandarizadas y alineadas con éxito (A-J en todas las pestañas).'
+    message: 'Hojas de ventas y catálogo estandarizadas y alineadas con éxito.'
   };
 }
 
@@ -2376,11 +2569,23 @@ function doPost(e) {
       estandarizarYRepararHojas();
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        message: 'Conexión exitosa y hojas estandarizadas: Todas las ventas, Daniel, Jhon, Julian, Administrador.'
+        message: 'Conexión exitosa y hojas estandarizadas: Todas las ventas, Daniel, Jhon, Julian, Administrador, Catálogo y Emprendimientos.'
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Obtener hoja maestra y pre-crear hojas de vendedores
+    // 2. Sincronización automática de Catálogo (SYNC_CATALOG)
+    if (payload.action === 'SYNC_CATALOG') {
+      var syncStats = syncCatalogSheets(ss, payload);
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        message: 'Catálogo de emprendimientos y productos sincronizado con éxito en Google Sheets.',
+        productosActualizados: syncStats.productosCount,
+        emprendimientosActualizados: syncStats.comerciosCount,
+        timestamp: new Date().toISOString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 3. Obtener hoja maestra y pre-crear hojas de vendedores
     var masterSheet = getOrCreateMasterSheet(ss);
     var sellerName = (payload.usuarioNombre || payload.usuario || "Sin vendedor").toString().trim();
     var sellerSheet = getOrCreateSellerSheet(ss, sellerName);
@@ -2559,6 +2764,10 @@ createApp({
     const webhookStatusMessage = ref('');
     const webhookStatusSuccess = ref(false);
     const copiedScript = ref(false);
+
+    // Catalog Auto-Sync State
+    const isSyncingCatalog = ref(false);
+    const catalogSyncStatus = ref('');
 
     // Admin Security Screen (PIN 8588)
     const ADMIN_ACCESS_CODE = '8588';
@@ -3420,6 +3629,74 @@ createApp({
       return assigned.includes(prodId);
     };
 
+    /**
+     * Sincroniza automáticamente el catálogo completo (Emprendimientos y Productos)
+     * con Google Sheets vía el webhook oficial de Apps Script (acción: SYNC_CATALOG).
+     */
+    const syncCatalogToWebhook = async (showNotification = false) => {
+      if (!webhookUrl.value) return;
+      isSyncingCatalog.value = true;
+      catalogSyncStatus.value = 'Sincronizando catálogo con Google Sheets...';
+
+      const detailedCatalog = [];
+      comercios.value.forEach(c => {
+        const assignedIds = comercioProductsMap.value[c.id] || [];
+        assignedIds.forEach(pId => {
+          const prod = productos.value.find(p => p.id === pId);
+          if (prod) {
+            detailedCatalog.push({
+              comercio: c.nombre,
+              producto: prod.nombre,
+              precio: prod.precio,
+              codigo: prod.codigo || '',
+              estado: prod.activo !== false ? 'Activo' : 'Inactivo'
+            });
+          }
+        });
+      });
+
+      const payload = {
+        action: 'SYNC_CATALOG',
+        timestamp: new Date().toISOString(),
+        comercios: comercios.value.map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          productosCount: (comercioProductsMap.value[c.id] || []).length,
+          estado: c.activo !== false ? 'Activo' : 'Inactivo'
+        })),
+        productos: productos.value.map(p => ({
+          id: p.id,
+          codigo: p.codigo || '',
+          nombre: p.nombre,
+          precio: p.precio,
+          estado: p.activo !== false ? 'Activo' : 'Inactivo'
+        })),
+        catalogoDetallado: detailedCatalog
+      };
+
+      try {
+        await fetch(webhookUrl.value, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        catalogSyncStatus.value = '✓ Catálogo sincronizado en Google Sheets (' + detailedCatalog.length + ' productos en ' + comercios.value.length + ' emprendimientos)';
+        if (showNotification) {
+          showToast('✓ Catálogo sincronizado con Google Sheets con éxito', 'success');
+        }
+      } catch (err) {
+        console.warn('Error sincronizando catálogo con webhook:', err);
+        catalogSyncStatus.value = '⚠️ Error al sincronizar catálogo con Google Sheets: ' + err.toString();
+        if (showNotification) {
+          showToast('No se pudo conectar con el webhook de Google Sheets', 'error');
+        }
+      } finally {
+        isSyncingCatalog.value = false;
+      }
+    };
+
     const toggleProductAssignment = (comercioId, prodId) => {
       if (!comercioProductsMap.value[comercioId]) {
         comercioProductsMap.value[comercioId] = [];
@@ -3432,6 +3709,8 @@ createApp({
         list.push(prodId);
       }
       saveState();
+      // Auto-sync catalog changes to Google Sheets in background
+      syncCatalogToWebhook(false);
     };
 
     const openAddBusinessModal = () => {
@@ -3451,7 +3730,8 @@ createApp({
     };
 
     const saveBusinessModal = () => {
-      if (isEditingBusiness.value) {
+      const isEdit = isEditingBusiness.value;
+      if (isEdit) {
         const idx = comercios.value.findIndex(c => c.id === businessForm.value.id);
         if (idx !== -1) comercios.value[idx] = { ...businessForm.value };
       } else {
@@ -3461,6 +3741,29 @@ createApp({
       }
       saveState();
       businessModalOpen.value = false;
+      // Auto-sync update/addition with Google Sheets & Excel
+      syncCatalogToWebhook(true);
+      showToast(isEdit ? 'Emprendimiento actualizado y sincronizado' : 'Emprendimiento creado y sincronizado', 'success');
+    };
+
+    const deleteBusiness = (c) => {
+      if (!c) return;
+      const nombre = c.nombre;
+      if (!confirm('¿Estás seguro de eliminar el emprendimiento "' + nombre + '"?\\n\\nEsta acción actualizará automáticamente el catálogo en Google Sheets y en los reportes de Excel.')) {
+        return;
+      }
+
+      comercios.value = comercios.value.filter(item => item.id !== c.id);
+      delete comercioProductsMap.value[c.id];
+      if (selectedComercioId.value === c.id) {
+        selectedComercioId.value = '';
+        if (step.value > 1) step.value = 1;
+      }
+      saveState();
+      businessModalOpen.value = false;
+      // Auto-sync deletion with Google Sheets & Excel
+      syncCatalogToWebhook(true);
+      showToast('Emprendimiento "' + nombre + '" eliminado y catálogo sincronizado', 'success');
     };
 
     // Product Catalog Management
@@ -3483,7 +3786,8 @@ createApp({
     };
 
     const saveProductModal = () => {
-      if (isEditingProduct.value) {
+      const isEdit = isEditingProduct.value;
+      if (isEdit) {
         const idx = productos.value.findIndex(p => p.id === productForm.value.id);
         if (idx !== -1) productos.value[idx] = { ...productForm.value };
       } else {
@@ -3496,6 +3800,29 @@ createApp({
       }
       saveState();
       productModalOpen.value = false;
+      // Auto-sync update/addition with Google Sheets & Excel
+      syncCatalogToWebhook(true);
+      showToast(isEdit ? 'Producto modificado y sincronizado' : 'Producto creado y sincronizado', 'success');
+    };
+
+    const deleteProduct = (p) => {
+      if (!p) return;
+      const nombre = p.nombre;
+      if (!confirm('¿Estás seguro de eliminar el producto "' + nombre + '"?\\n\\nSe quitará de todos los emprendimientos y se actualizará automáticamente en Google Sheets y en Excel.')) {
+        return;
+      }
+
+      productos.value = productos.value.filter(item => item.id !== p.id);
+      Object.keys(comercioProductsMap.value).forEach(cId => {
+        comercioProductsMap.value[cId] = (comercioProductsMap.value[cId] || []).filter(id => id !== p.id);
+      });
+      delete cartQuantities.value[p.id];
+      delete cartPayments.value[p.id];
+      saveState();
+      productModalOpen.value = false;
+      // Auto-sync deletion with Google Sheets & Excel
+      syncCatalogToWebhook(true);
+      showToast('Producto "' + nombre + '" eliminado y catálogo sincronizado', 'success');
     };
 
     // User Role Management & Labels
@@ -3520,9 +3847,11 @@ createApp({
       comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
       productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
       comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
-      localStorage.setItem('rm_catalog_version', 'v20261026_real');
+      localStorage.setItem('rm_catalog_version', 'v20261026_real_24');
       saveState();
-      showToast('Catálogo de 24 emprendimientos y 113 productos restablecido con éxito', 'success');
+      // Auto-sync reset catalog with Google Sheets
+      syncCatalogToWebhook(true);
+      showToast('Catálogo de 24 emprendimientos y 113 productos restablecido y sincronizado con éxito', 'success');
     };
 
     // -------------------------------------------------------------------
@@ -3635,8 +3964,55 @@ createApp({
           }
         });
 
+        // 4. Pestaña de Catálogo de Productos
+        const catRows = [];
+        comercios.value.forEach(c => {
+          const pIds = comercioProductsMap.value[c.id] || [];
+          pIds.forEach(pId => {
+            const prod = productos.value.find(p => p.id === pId);
+            if (prod) {
+              catRows.push({
+                'Emprendimiento': c.nombre,
+                'Nombre del Producto': prod.nombre,
+                'Precio unitario': prod.precio,
+                'Código': prod.codigo || '',
+                'Estado': prod.activo !== false ? 'Activo' : 'Inactivo'
+              });
+            }
+          });
+        });
+        const defaultCatHeader = [
+          {
+            'Emprendimiento': '',
+            'Nombre del Producto': '',
+            'Precio unitario': '',
+            'Código': '',
+            'Estado': ''
+          }
+        ];
+        const wsCat = XLSX.utils.json_to_sheet(catRows.length > 0 ? catRows : defaultCatHeader);
+        XLSX.utils.book_append_sheet(wb, wsCat, "Catálogo de Productos");
+
+        // 5. Pestaña de Emprendimientos
+        const empRows = comercios.value.map(c => ({
+          'ID': c.id,
+          'Nombre del Emprendimiento': c.nombre,
+          'Cantidad de Productos': (comercioProductsMap.value[c.id] || []).length,
+          'Estado': c.activo !== false ? 'Activo' : 'Inactivo'
+        }));
+        const defaultEmpHeader = [
+          {
+            'ID': '',
+            'Nombre del Emprendimiento': '',
+            'Cantidad de Productos': '',
+            'Estado': ''
+          }
+        ];
+        const wsEmp = XLSX.utils.json_to_sheet(empRows.length > 0 ? empRows : defaultEmpHeader);
+        XLSX.utils.book_append_sheet(wb, wsEmp, "Emprendimientos");
+
         XLSX.writeFile(wb, "Ventas_de_la_Tiendita.xlsx");
-        showToast('Archivo Excel descargado con columnas estandarizadas en todas las hojas', 'success');
+        showToast('Archivo Excel descargado con ventas y catálogo actualizado', 'success');
       } else {
         // Fallback to CSV if SheetJS unavailable
         exportToCSV();
@@ -3827,6 +4203,8 @@ createApp({
       adminFilterBusiness,
       isTestingWebhook,
       isRepairingWebhook,
+      isSyncingCatalog,
+      catalogSyncStatus,
       webhookStatusMessage,
       webhookStatusSuccess,
       copiedScript,
@@ -3885,9 +4263,12 @@ createApp({
       openAddBusinessModal,
       openEditBusinessModal,
       saveBusinessModal,
+      deleteBusiness,
       openAddProductModal,
       openEditProductModal,
       saveProductModal,
+      deleteProduct,
+      syncCatalogToWebhook,
       toggleUserRole,
       resetToSeedData,
       exportToExcel,
