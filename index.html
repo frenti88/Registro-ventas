@@ -1232,7 +1232,7 @@
                 </a>
               </div>
               <p class="text-[11px] text-gray-600 leading-relaxed">
-                Cada venta se registrará automáticamente en la pestaña consolidada <strong class="text-black">"Todas las ventas"</strong> y en una pestaña individual creada para cada vendedor (ej. <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Melissa Restrepo</span>, <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Jennifer Gómez</span>).
+                Cada venta se registrará automáticamente en la pestaña consolidada <strong class="text-black">"Todas las ventas"</strong> y en una pestaña individual creada para cada vendedor (ej. <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Daniel</span>, <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Jhon</span>, <span class="bg-white px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[10px]">Julian</span>).
               </p>
             </div>
 
@@ -1947,10 +1947,9 @@ const SEED_COMERCIO_MAP = {
 
 // 4. Preloaded Staff Users
 const SEED_USERS = [
-  { email: 'melissa@campo.co', nombre: 'Melissa', role: 'vendedora' },
-  { email: 'jennifer@campo.co', nombre: 'Jennifer', role: 'vendedora' },
-  { email: 'tatiana@campo.co', nombre: 'Tatiana', role: 'vendedora' },
-  { email: 'carlos@campo.co', nombre: 'Carlos', role: 'vendedor' },
+  { email: 'daniel@campo.co', nombre: 'Daniel', role: 'vendedor' },
+  { email: 'jhon@campo.co', nombre: 'Jhon', role: 'vendedor' },
+  { email: 'julian@campo.co', nombre: 'Julian', role: 'vendedor' },
   { email: 'admin@campo.co', nombre: 'Administrador', role: 'admin' }
 ];
 
@@ -1966,12 +1965,12 @@ const INSPIRATIONAL_QUOTES = [
 // Official Google Apps Script Webhook Code with LockService & Multi-Seller Tabs
 const APPS_SCRIPT_TEMPLATE = `/**
  * ===================================================================
- * REGISTRO-M - SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE SHEETS
+ * VENTAS DE LA TIENDITA - SINCRONIZACIÓN AUTOMÁTICA CON GOOGLE SHEETS
  * Documento: https://docs.google.com/spreadsheets/d/1vp3Sjxeu1thedOwv0WFUBZQxii5bd_FCWZzKAjS5dVc/edit
  *
  * Registra cada venta en:
  * 1. "Todas las ventas": Consolidado general de todos los vendedores.
- * 2. Pestaña individual por Vendedor (ej. "Melissa Restrepo", "Jennifer Gómez").
+ * 2. Pestañas individuales para cada vendedor: "Daniel", "Jhon", "Julian".
  * ===================================================================
  */
 
@@ -1980,9 +1979,50 @@ function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: 'online',
     documento: ss.getName(),
-    mensaje: 'Servicio Webhook de Registro-M activo y listo para recibir ventas.',
+    mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas.',
+    vendedores: ['Daniel', 'Jhon', 'Julian'],
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getOrCreateMasterSheet(ss) {
+  var name = "Todas las ventas";
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    var first = ss.getSheets()[0];
+    if (first && first.getLastRow() === 0 && (first.getName() === "Hoja 1" || first.getName() === "Sheet1")) {
+      first.setName(name);
+      sheet = first;
+    } else {
+      sheet = ss.insertSheet(name, 0);
+    }
+    var headers = [
+      "ID de registro", "Fecha", "Hora", "Vendedor",
+      "Emprendimiento", "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
+    ];
+    sheet.appendRow(headers);
+    var hRange = sheet.getRange(1, 1, 1, headers.length);
+    hRange.setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getOrCreateSellerSheet(ss, sellerName) {
+  var clean = (sellerName || "Vendedor").toString().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s_-]/g, "").trim().substring(0, 95) || "Vendedor";
+  var sheet = ss.getSheetByName(clean);
+  if (!sheet) {
+    sheet = ss.insertSheet(clean);
+    var headers = [
+      "ID de registro", "Fecha", "Hora", "Emprendimiento",
+      "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
+    ];
+    sheet.appendRow(headers);
+    var hRange = sheet.getRange(1, 1, 1, headers.length);
+    hRange.setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 function doPost(e) {
@@ -2006,63 +2046,31 @@ function doPost(e) {
     }
 
     var payload = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Verificación de conectividad (PING)
+    // 1. Verificación de conectividad (PING) y creación de hojas
     if (payload.action === 'PING') {
+      getOrCreateMasterSheet(ss);
+      ["Daniel", "Jhon", "Julian"].forEach(function(v) {
+        getOrCreateSellerSheet(ss, v);
+      });
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        message: 'Conexión exitosa con Ventas de la Tiendita'
+        message: 'Conexión exitosa. Hojas configuradas: Todas las ventas, Daniel, Jhon, Julian'
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-    // -------------------------------------------------------------
-    // 1. OBTENER O CREAR HOJA MAESTRA ("Todas las ventas")
-    // -------------------------------------------------------------
-    var masterSheetName = "Todas las ventas";
-    var masterSheet = ss.getSheetByName(masterSheetName);
-    if (!masterSheet) {
-      var firstSheet = ss.getSheets()[0];
-      if (firstSheet && firstSheet.getLastRow() === 0 && (firstSheet.getName() === "Hoja 1" || firstSheet.getName() === "Sheet1")) {
-        firstSheet.setName(masterSheetName);
-        masterSheet = firstSheet;
-      } else {
-        masterSheet = ss.insertSheet(masterSheetName, 0);
-      }
-
-      var masterHeaders = [
-        "ID de registro", "Fecha", "Hora", "Vendedor",
-        "Emprendimiento", "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
-      ];
-      masterSheet.appendRow(masterHeaders);
-      var mHeaderRange = masterSheet.getRange(1, 1, 1, masterHeaders.length);
-      mHeaderRange.setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
-      masterSheet.setFrozenRows(1);
-    }
-
-    // -------------------------------------------------------------
-    // 2. OBTENER O CREAR HOJA INDIVIDUAL DEL VENDEDOR
-    // -------------------------------------------------------------
+    // 2. Obtener hoja maestra y pre-crear hojas de vendedores
+    var masterSheet = getOrCreateMasterSheet(ss);
     var sellerName = (payload.usuarioNombre || payload.usuario || "Sin vendedor").toString().trim();
-    var safeSellerTab = sellerName.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s_-]/g, "").trim().substring(0, 95) || "Vendedor";
+    var sellerSheet = getOrCreateSellerSheet(ss, sellerName);
 
-    var sellerSheet = ss.getSheetByName(safeSellerTab);
-    if (!sellerSheet) {
-      sellerSheet = ss.insertSheet(safeSellerTab);
-      var sellerHeaders = [
-        "ID de registro", "Fecha", "Hora", "Emprendimiento",
-        "Producto", "Unidades", "Precio unitario ($ COP)", "Valor total ($ COP)", "Método de pago"
-      ];
-      sellerSheet.appendRow(sellerHeaders);
-      var sHeaderRange = sellerSheet.getRange(1, 1, 1, sellerHeaders.length);
-      sHeaderRange.setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
-      sellerSheet.setFrozenRows(1);
-    }
+    // Asegurar que las hojas de Daniel, Jhon y Julian existen en el libro
+    ["Daniel", "Jhon", "Julian"].forEach(function(v) {
+      getOrCreateSellerSheet(ss, v);
+    });
 
-    // -------------------------------------------------------------
-    // 3. DEDUPLICACIÓN POR ID DE REGISTRO
-    // -------------------------------------------------------------
+    // 3. Deduplicación por ID de registro
     var masterExistingIds = {};
     var masterLastRow = masterSheet.getLastRow();
     if (masterLastRow > 1) {
@@ -2083,9 +2091,7 @@ function doPost(e) {
       }
     }
 
-    // -------------------------------------------------------------
-    // 4. PREPARAR FILAS A INSERTAR
-    // -------------------------------------------------------------
+    // 4. Preparar filas a insertar
     var rowsToInsertMaster = [];
     var rowsToInsertSeller = [];
     var items = payload.items || [];
@@ -2130,9 +2136,7 @@ function doPost(e) {
       }
     }
 
-    // -------------------------------------------------------------
-    // 5. ESCRIBIR Y FORMATEAR EN HOJA MAESTRA
-    // -------------------------------------------------------------
+    // 5. Escribir y formatear en hoja maestra
     if (rowsToInsertMaster.length > 0) {
       var mStart = masterLastRow + 1;
       var mCount = rowsToInsertMaster.length;
@@ -2141,9 +2145,7 @@ function doPost(e) {
       masterSheet.getRange(mStart, 8, mCount, 2).setNumberFormat('"$"#,##0');
     }
 
-    // -------------------------------------------------------------
-    // 6. ESCRIBIR Y FORMATEAR EN HOJA DEL VENDEDOR
-    // -------------------------------------------------------------
+    // 6. Escribir y formatear en hoja del vendedor
     if (rowsToInsertSeller.length > 0) {
       var sStart = sellerLastRow + 1;
       var sCount = rowsToInsertSeller.length;
@@ -2155,7 +2157,7 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success',
       visitaId: payload.visitaId,
-      vendedor: safeSellerTab,
+      vendedor: sellerName,
       registrosInsertados: rowsToInsertMaster.length
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -2290,21 +2292,16 @@ createApp({
     // -------------------------------------------------------------------
     const loadFromLocalStorage = () => {
       try {
-        const storedUsers = localStorage.getItem('rm_users');
-        if (storedUsers) {
-          const parsed = JSON.parse(storedUsers);
-          staffUsers.value = parsed.map(u => {
-            if (u.nombre && u.nombre.includes(' ')) {
-              u.nombre = u.nombre.split(' ')[0];
-            }
-            if (u.role === 'operativo' || !u.role) {
-              const n = (u.nombre || '').toLowerCase();
-              u.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
-            }
-            return u;
-          });
+        const USERS_VERSION = 'v20261026_sellers_daniel_jhon_julian';
+        const storedUsersVersion = localStorage.getItem('rm_users_version');
+
+        if (storedUsersVersion !== USERS_VERSION) {
+          staffUsers.value = JSON.parse(JSON.stringify(SEED_USERS));
+          localStorage.setItem('rm_users', JSON.stringify(staffUsers.value));
+          localStorage.setItem('rm_users_version', USERS_VERSION);
         } else {
-          staffUsers.value = SEED_USERS;
+          const storedUsers = localStorage.getItem('rm_users');
+          staffUsers.value = storedUsers ? JSON.parse(storedUsers) : JSON.parse(JSON.stringify(SEED_USERS));
         }
 
         const CATALOG_VERSION = 'v20261026_real_24';
@@ -2373,13 +2370,13 @@ createApp({
 
         const storedCurrent = localStorage.getItem('rm_current_user');
         if (storedCurrent) {
-          currentUser.value = JSON.parse(storedCurrent);
-          if (currentUser.value && currentUser.value.nombre && currentUser.value.nombre.includes(' ')) {
-            currentUser.value.nombre = currentUser.value.nombre.split(' ')[0];
-          }
-          if (currentUser.value && (currentUser.value.role === 'operativo' || !currentUser.value.role)) {
-            const n = (currentUser.value.nombre || '').toLowerCase();
-            currentUser.value.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
+          const parsedUser = JSON.parse(storedCurrent);
+          const found = staffUsers.value.find(u => u.email.toLowerCase() === (parsedUser.email || '').toLowerCase());
+          if (found) {
+            currentUser.value = { ...found };
+          } else {
+            currentUser.value = null;
+            localStorage.removeItem('rm_current_user');
           }
         }
       } catch (err) {
@@ -3097,23 +3094,16 @@ createApp({
       productModalOpen.value = false;
     };
 
-    // User Role Management & Gendered Labels
+    // User Role Management & Labels
     const getUserRoleLabel = (user) => {
       if (!user) return '';
       if (user.role === 'admin') return 'Admin';
-      if (user.role === 'vendedora') return 'Vendedora';
-      if (user.role === 'vendedor') return 'Vendedor';
-      const n = (user.nombre || '').toLowerCase();
-      if (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) {
-        return 'Vendedora';
-      }
       return 'Vendedor';
     };
 
     const toggleUserRole = (u) => {
       if (u.role === 'admin') {
-        const n = (u.nombre || '').toLowerCase();
-        u.role = (n.includes('melissa') || n.includes('jennifer') || n.includes('tatiana')) ? 'vendedora' : 'vendedor';
+        u.role = 'vendedor';
       } else {
         u.role = 'admin';
       }
@@ -3157,17 +3147,89 @@ createApp({
 
     const exportToExcel = () => {
       const rows = prepareFlatSalesData();
-      if (rows.length === 0) {
-        showToast('No hay ventas registradas para exportar', 'error');
-        return;
-      }
 
       if (window.XLSX) {
-        const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Todas las ventas");
+
+        // 1. Hoja consolidada: "Todas las ventas"
+        const defaultMasterHeader = [
+          {
+            'ID de registro': '',
+            'Fecha': '',
+            'Hora': '',
+            'Vendedor': '',
+            'Emprendimiento': '',
+            'Producto': '',
+            'Unidades vendidas': '',
+            'Precio unitario': '',
+            'Valor total': '',
+            'Método de pago': ''
+          }
+        ];
+        const masterData = rows.length > 0 ? rows : defaultMasterHeader;
+        const wsMaster = XLSX.utils.json_to_sheet(masterData);
+        XLSX.utils.book_append_sheet(wb, wsMaster, "Todas las ventas");
+
+        // 2. Pestañas individuales para cada vendedor oficial: Daniel, Jhon, Julian
+        const sellers = ['Daniel', 'Jhon', 'Julian'];
+        sellers.forEach(sName => {
+          const sellerRows = rows
+            .filter(r => (r['Vendedor'] || '').toLowerCase().includes(sName.toLowerCase()))
+            .map(r => ({
+              'ID de registro': r['ID de registro'],
+              'Fecha': r['Fecha'],
+              'Hora': r['Hora'],
+              'Emprendimiento': r['Emprendimiento'],
+              'Producto': r['Producto'],
+              'Unidades vendidas': r['Unidades vendidas'],
+              'Precio unitario': r['Precio unitario'],
+              'Valor total': r['Valor total'],
+              'Método de pago': r['Método de pago']
+            }));
+
+          const sData = sellerRows.length > 0 ? sellerRows : [
+            {
+              'ID de registro': '',
+              'Fecha': '',
+              'Hora': '',
+              'Emprendimiento': '',
+              'Producto': '',
+              'Unidades vendidas': '',
+              'Precio unitario': '',
+              'Valor total': '',
+              'Método de pago': ''
+            }
+          ];
+          const wsSeller = XLSX.utils.json_to_sheet(sData);
+          XLSX.utils.book_append_sheet(wb, wsSeller, sName);
+        });
+
+        // 3. Si el Administrador u otro usuario tiene ventas registradas, incluir su pestaña
+        const otherSellers = [...new Set(rows.map(r => r['Vendedor']).filter(Boolean))]
+          .filter(v => !sellers.some(s => s.toLowerCase() === v.toLowerCase()));
+
+        otherSellers.forEach(oName => {
+          const oRows = rows
+            .filter(r => (r['Vendedor'] || '').toLowerCase() === oName.toLowerCase())
+            .map(r => ({
+              'ID de registro': r['ID de registro'],
+              'Fecha': r['Fecha'],
+              'Hora': r['Hora'],
+              'Emprendimiento': r['Emprendimiento'],
+              'Producto': r['Producto'],
+              'Unidades vendidas': r['Unidades vendidas'],
+              'Precio unitario': r['Precio unitario'],
+              'Valor total': r['Valor total'],
+              'Método de pago': r['Método de pago']
+            }));
+          if (oRows.length > 0) {
+            const wsOther = XLSX.utils.json_to_sheet(oRows);
+            XLSX.utils.book_append_sheet(wb, wsOther, oName.substring(0, 31));
+          }
+        });
+
         XLSX.writeFile(wb, "Ventas_de_la_Tiendita.xlsx");
-        showToast('Archivo Excel descargado con éxito', 'success');
+        showToast('Archivo Excel descargado con hojas para Daniel, Jhon y Julian', 'success');
       } else {
         // Fallback to CSV if SheetJS unavailable
         exportToCSV();

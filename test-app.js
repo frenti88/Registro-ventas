@@ -91,17 +91,22 @@ async function runE2ETests() {
         console.log('Title:', title);
         const buttons = await evalExpr('Array.from(document.querySelectorAll("button")).map(b => b.innerText.trim()).filter(Boolean)');
         console.log('Buttons found on Login:', buttons.length);
+        const hasDaniel = await evalExpr('document.body.innerText.toLowerCase().includes("daniel")');
+        const hasJhon = await evalExpr('document.body.innerText.toLowerCase().includes("jhon")');
+        const hasJulian = await evalExpr('document.body.innerText.toLowerCase().includes("julian")');
+        const hasAdmin = await evalExpr('document.body.innerText.toLowerCase().includes("administrador")');
+        console.log('Preloaded users found -> Daniel:', hasDaniel, '| Jhon:', hasJhon, '| Julian:', hasJulian, '| Admin:', hasAdmin);
 
-        // Click on Melissa's quick login
-        console.log('\n--- TEST 2: QUICK LOGIN (MELISSA) ---');
+        // Click on Daniel's quick login
+        console.log('\n--- TEST 2: QUICK LOGIN (DANIEL) ---');
         await evalExpr(`(() => {
-          const melissaBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('melissa'));
-          if (melissaBtn) melissaBtn.click();
+          const danielBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('daniel'));
+          if (danielBtn) danielBtn.click();
         })()`);
         await new Promise(r => setTimeout(r, 500));
 
-        const currentUser = await evalExpr('document.body.innerText.toLowerCase().includes("melissa")');
-        console.log('Melissa logged in:', currentUser);
+        const currentUser = await evalExpr('document.body.innerText.toLowerCase().includes("daniel")');
+        console.log('Daniel logged in:', currentUser);
         const step1Title = await evalExpr('document.body.innerText.toLowerCase().includes("elige un emprendimiento")');
         console.log('Step 1 reached:', step1Title);
 
