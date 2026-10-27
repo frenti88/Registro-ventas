@@ -3,14 +3,19 @@ const http = require('http');
 
 async function runE2ETests() {
   console.log('🚀 Starting Chrome in headless mode for Registro-M E2E validation...');
+  const PORT = 9225;
   const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', [
     '--headless=new',
-    '--remote-debugging-port=9222',
+    `--remote-debugging-port=${PORT}`,
     '--remote-allow-origins=*',
     '--user-data-dir=/tmp/chrome-test-profile-' + Date.now(),
     '--disable-gpu',
     'file://' + process.cwd() + '/index.html'
   ]);
+  chrome.stderr.on('data', d => {
+    const s = d.toString();
+    if (!s.includes('CVDisplayLink')) console.log('Chrome stderr:', s.trim());
+  });
 
   // Wait for Chrome to be ready with retries
   let pages = null;
@@ -18,7 +23,7 @@ async function runE2ETests() {
     await new Promise(r => setTimeout(r, 500));
     try {
       pages = await new Promise((resolve, reject) => {
-        const req = http.get('http://127.0.0.1:9222/json', (res) => {
+        const req = http.get(`http://127.0.0.1:${PORT}/json`, (res) => {
           let data = '';
           res.on('data', chunk => data += chunk);
           res.on('end', () => {

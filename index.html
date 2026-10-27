@@ -2287,15 +2287,17 @@ createApp({
           staffUsers.value = SEED_USERS;
         }
 
-        const CATALOG_VERSION = 'v20261026_real';
+        const CATALOG_VERSION = 'v20261026_real_24';
         const storedCatalogVersion = localStorage.getItem('rm_catalog_version');
 
         if (storedCatalogVersion !== CATALOG_VERSION) {
           comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
           productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
           comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
+          localStorage.setItem('rm_comercios', JSON.stringify(comercios.value));
+          localStorage.setItem('rm_productos', JSON.stringify(productos.value));
+          localStorage.setItem('rm_comercio_productos', JSON.stringify(comercioProductsMap.value));
           localStorage.setItem('rm_catalog_version', CATALOG_VERSION);
-          saveState();
         } else {
           const storedComercios = localStorage.getItem('rm_comercios');
           comercios.value = storedComercios ? JSON.parse(storedComercios) : JSON.parse(JSON.stringify(SEED_COMERCIOS));
