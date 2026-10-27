@@ -2490,6 +2490,10 @@ function estandarizarYRepararHojas() {
 
     master.clearContents();
     master.clearFormats();
+    // Limpiar residuos en columnas K, L... (columna 11 en adelante)
+    if (master.getMaxColumns() > STANDARD_HEADERS.length) {
+      master.getRange(1, STANDARD_HEADERS.length + 1, master.getMaxRows(), master.getMaxColumns() - STANDARD_HEADERS.length).clear();
+    }
     master.getRange(1, 1, 1, STANDARD_HEADERS.length).setValues([STANDARD_HEADERS])
       .setFontWeight("bold").setBackground("#000000").setFontColor("#FFFFFF");
     master.setFrozenRows(1);
@@ -2533,6 +2537,9 @@ function estandarizarYRepararHojas() {
 
       sSheet.clearContents();
       sSheet.clearFormats();
+      if (sSheet.getMaxColumns() > STANDARD_HEADERS.length) {
+        sSheet.getRange(1, STANDARD_HEADERS.length + 1, sSheet.getMaxRows(), sSheet.getMaxColumns() - STANDARD_HEADERS.length).clear();
+      }
       sSheet.getRange(1, 1, 1, STANDARD_HEADERS.length).setValues([STANDARD_HEADERS])
         .setFontWeight("bold").setBackground("#1F2937").setFontColor("#FFFFFF");
       sSheet.setFrozenRows(1);
