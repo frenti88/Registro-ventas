@@ -1499,7 +1499,7 @@
         type="button"
         role="tab"
         :aria-selected="currentTab === 'registro'"
-        @click="currentTab = 'registro'"
+        @click="currentTab = 'registro'; if (step === 4) continueOtherBusiness();"
         class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition"
         :class="currentTab === 'registro' ? 'text-black font-extrabold' : 'text-gray-500 font-medium'"
       >
@@ -1513,12 +1513,21 @@
         role="tab"
         :aria-selected="currentTab === 'historial'"
         @click="currentTab = 'historial'"
-        class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition relative"
+        class="h-14 flex flex-col items-center justify-center space-y-0.5 touch-target active-scale transition"
         :class="currentTab === 'historial' ? 'text-black font-extrabold' : 'text-gray-500 font-medium'"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        <div class="relative inline-flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <!-- Punto indicador de nuevos registros: cerca al icono, en la parte superior derecha -->
+          <span 
+            v-if="hasUnseenRegistros" 
+            class="absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-black ring-2 ring-white" 
+            aria-label="Nuevos registros disponibles"
+          ></span>
+        </div>
         <span class="text-[11px]">Mis registros</span>
-        <span v-if="userVisits.length > 0" class="absolute top-1 right-8 w-2 h-2 rounded-full bg-black" aria-hidden="true"></span>
       </button>
 
       <!-- Tab 3: Admin (Only visible if role === 'admin') -->
@@ -2398,6 +2407,7 @@ createApp({
 
     onMounted(() => {
       loadFromLocalStorage();
+      initSeenVisitsForUser();
 
       // Network listeners
       window.addEventListener('online', () => {
@@ -2410,6 +2420,20 @@ createApp({
 
       // Default random quote
       currentInspirationalMessage.value = INSPIRATIONAL_QUOTES[0];
+    });
+
+    // Auto-clear notification dot when entering Mis Registros
+    watch(currentTab, (newTab) => {
+      if (newTab === 'historial') {
+        markRegistrosAsSeen();
+      }
+    });
+
+    // Sync notification status when user switches
+    watch(currentUser, (newUser) => {
+      if (newUser) {
+        initSeenVisitsForUser();
+      }
     });
 
     // -------------------------------------------------------------------
@@ -2805,6 +2829,39 @@ createApp({
       if (!currentUser.value) return [];
       return visitas.value.filter(v => v.usuarioEmail === currentUser.value.email);
     });
+
+    // -------------------------------------------------------------------
+    // UNSEEN REGISTROS INDICATOR (DOT ON CLIPBOARD ICON)
+    // Aparece sólo cuando se ingresan nuevos registros y no se ha visitado
+    // la sección. Desaparece de inmediato al ingresar a Mis Registros.
+    // -------------------------------------------------------------------
+    const lastSeenVisitsCount = ref(0);
+
+    const hasUnseenRegistros = computed(() => {
+      if (!currentUser.value) return false;
+      if (currentTab.value === 'historial') return false;
+      return userVisits.value.length > lastSeenVisitsCount.value;
+    });
+
+    const markRegistrosAsSeen = () => {
+      if (!currentUser.value) return;
+      lastSeenVisitsCount.value = userVisits.value.length;
+      localStorage.setItem('rm_seen_visits_' + currentUser.value.email, String(lastSeenVisitsCount.value));
+    };
+
+    const initSeenVisitsForUser = () => {
+      if (!currentUser.value) {
+        lastSeenVisitsCount.value = 0;
+        return;
+      }
+      const saved = localStorage.getItem('rm_seen_visits_' + currentUser.value.email);
+      if (saved !== null) {
+        lastSeenVisitsCount.value = parseInt(saved, 10) || 0;
+      } else {
+        lastSeenVisitsCount.value = userVisits.value.length;
+        localStorage.setItem('rm_seen_visits_' + currentUser.value.email, String(lastSeenVisitsCount.value));
+      }
+    };
 
     const filteredUserVisits = computed(() => {
       if (!historySearchQuery.value.trim()) return userVisits.value;
@@ -3256,6 +3313,8 @@ createApp({
       historySearchQuery,
       userVisits,
       filteredUserVisits,
+      hasUnseenRegistros,
+      markRegistrosAsSeen,
       editingVisit,
       adminTotalRevenue,
       adminTotalUnits,
