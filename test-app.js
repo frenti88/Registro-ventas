@@ -4,25 +4,45 @@ const http = require('http');
 async function runE2ETests() {
   console.log('🚀 Starting Chrome in headless mode for Registro-M E2E validation...');
   const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', [
-    '--headless',
+    '--headless=new',
     '--remote-debugging-port=9222',
+    '--remote-allow-origins=*',
+    '--user-data-dir=/tmp/chrome-test-profile-' + Date.now(),
     '--disable-gpu',
     'file://' + process.cwd() + '/index.html'
   ]);
 
-  await new Promise(r => setTimeout(r, 2000));
+  // Wait for Chrome to be ready with retries
+  let pages = null;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    await new Promise(r => setTimeout(r, 500));
+    try {
+      pages = await new Promise((resolve, reject) => {
+        const req = http.get('http://127.0.0.1:9222/json', (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+          });
+        });
+        req.on('error', reject);
+      });
+      if (pages && pages.length) break;
+    } catch (e) {}
+  }
 
-  http.get('http://localhost:9222/json', (res) => {
-    let data = '';
-    res.on('data', chunk => data += chunk);
-    res.on('end', async () => {
-      const pages = JSON.parse(data);
-      const appPage = pages.find(p => p.url.includes('index.html'));
-      if (!appPage) {
-        console.error('❌ Could not find index.html page');
-        chrome.kill();
-        process.exit(1);
-      }
+  if (!pages) {
+    console.error('❌ Could not connect to Chrome CDP');
+    chrome.kill();
+    process.exit(1);
+  }
+
+  const appPage = pages.find(p => p.url.includes('index.html')) || pages[0];
+  if (!appPage) {
+    console.error('❌ Could not find index.html page');
+    chrome.kill();
+    process.exit(1);
+  }
 
       const ws = new WebSocket(appPage.webSocketDebuggerUrl);
       let idCounter = 1;
@@ -81,14 +101,14 @@ async function runE2ETests() {
         console.log('Step 1 reached:', step1Title);
 
         console.log('\n--- TEST 3: STEP 1 - BUSINESS SELECTION & SEARCH ---');
-        const hasHilos = await evalExpr('document.body.innerText.toLowerCase().includes("hilos del origen")');
-        console.log('Has "Hilos del Origen":', hasHilos);
+        const hasCompostela = await evalExpr('document.body.innerText.toLowerCase().includes("compostela")');
+        console.log('Has "Compostela":', hasCompostela);
 
-        // Select Hilos del Origen
+        // Select Compostela
         await evalExpr(`(() => {
           const cards = Array.from(document.querySelectorAll('.cursor-pointer'));
-          const hilos = cards.find(c => c.innerText.toLowerCase().includes('hilos del origen'));
-          if (hilos) hilos.click();
+          const comp = cards.find(c => c.innerText.toLowerCase().includes('compostela'));
+          if (comp) comp.click();
         })()`);
         await new Promise(r => setTimeout(r, 300));
 
@@ -104,18 +124,18 @@ async function runE2ETests() {
         console.log('Step 2 reached:', isStep2);
 
         // Check product names
-        const hasCamiseta = await evalExpr('document.body.innerText.toLowerCase().includes("camiseta algodón orgánico")');
-        const hasRuana = await evalExpr('document.body.innerText.toLowerCase().includes("ruana ligera algodón")');
-        console.log('Has Camiseta ($55.000):', hasCamiseta);
-        console.log('Has Ruana ($115.000):', hasRuana);
+        const hasGalletaNostalgia = await evalExpr('document.body.innerText.toLowerCase().includes("galleta nostalgia")');
+        const hasGalletaNavidena = await evalExpr('document.body.innerText.toLowerCase().includes("galleta navideña")');
+        console.log('Has Galleta Nostalgia ($12.000):', hasGalletaNostalgia);
+        console.log('Has Galleta Navideña ($12.000):', hasGalletaNavidena);
 
-        // Increment Camiseta
-        console.log('Adding 2 units of Camiseta Algodón Orgánico...');
+        // Increment Galleta Nostalgia
+        console.log('Adding 2 units of Galleta Nostalgia x200gr...');
         await evalExpr(`(() => {
           const prodCards = Array.from(document.querySelectorAll('.bg-white.rounded-2xl.border'));
-          const camisetaCard = prodCards.find(c => c.innerText.toLowerCase().includes('camiseta algodón'));
-          if (camisetaCard) {
-            const plusBtn = camisetaCard.querySelectorAll('button')[1];
+          const nostalgiaCard = prodCards.find(c => c.innerText.toLowerCase().includes('galleta nostalgia'));
+          if (nostalgiaCard) {
+            const plusBtn = nostalgiaCard.querySelectorAll('button')[1];
             plusBtn.click(); // 1
             plusBtn.click(); // 2
           }
@@ -126,39 +146,39 @@ async function runE2ETests() {
         const hasPaymentMethod = await evalExpr('document.body.innerText.toLowerCase().includes("método de pago para este ítem")');
         console.log('Contextual payment method selector unfolded:', hasPaymentMethod);
 
-        // Switch Camiseta to Tarjeta
-        console.log('Selecting Tarjeta for Camiseta...');
+        // Switch Galleta Nostalgia to Tarjeta
+        console.log('Selecting Tarjeta for Galleta Nostalgia...');
         await evalExpr(`(() => {
           const prodCards = Array.from(document.querySelectorAll('.bg-white.rounded-2xl.border'));
-          const camisetaCard = prodCards.find(c => c.innerText.toLowerCase().includes('camiseta algodón'));
-          if (camisetaCard) {
-            const cardBtn = Array.from(camisetaCard.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('tarjeta'));
+          const nostalgiaCard = prodCards.find(c => c.innerText.toLowerCase().includes('galleta nostalgia'));
+          if (nostalgiaCard) {
+            const cardBtn = Array.from(nostalgiaCard.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('tarjeta'));
             if (cardBtn) cardBtn.click();
           }
         })()`);
         await new Promise(r => setTimeout(r, 300));
 
-        // Add 1 Ruana and set Transferencia (QR)
-        console.log('Adding 1 unit of Ruana Ligera Algodón (Transferencia QR)...');
+        // Add 1 Galleta Navideña and set Transferencia (QR)
+        console.log('Adding 1 unit of Galleta Navideña (Transferencia QR)...');
         await evalExpr(`(() => {
           const prodCards = Array.from(document.querySelectorAll('.bg-white.rounded-2xl.border'));
-          const ruanaCard = prodCards.find(c => c.innerText.toLowerCase().includes('ruana ligera'));
-          if (ruanaCard) {
-            const plusBtn = ruanaCard.querySelectorAll('button')[1];
+          const navidenaCard = prodCards.find(c => c.innerText.toLowerCase().includes('galleta navideña x200gr'));
+          if (navidenaCard) {
+            const plusBtn = navidenaCard.querySelectorAll('button')[1];
             plusBtn.click();
-            const qrBtn = Array.from(ruanaCard.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('transf'));
+            const qrBtn = Array.from(navidenaCard.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('transf'));
             if (qrBtn) qrBtn.click();
           }
         })()`);
         await new Promise(r => setTimeout(r, 400));
 
-        // Add 1 Mochila (Efectivo by default)
-        console.log('Adding 1 unit of Mochila (Efectivo)...');
+        // Add 1 Galleta Cuca (Efectivo by default)
+        console.log('Adding 1 unit of Galleta Cuca (Efectivo)...');
         await evalExpr(`(() => {
           const prodCards = Array.from(document.querySelectorAll('.bg-white.rounded-2xl.border'));
-          const mochilaCard = prodCards.find(c => c.innerText.toLowerCase().includes('mochila'));
-          if (mochilaCard) {
-            const plusBtn = mochilaCard.querySelectorAll('button')[1];
+          const cucaCard = prodCards.find(c => c.innerText.toLowerCase().includes('galleta cuca'));
+          if (cucaCard) {
+            const plusBtn = cucaCard.querySelectorAll('button')[1];
             plusBtn.click();
           }
         })()`);
@@ -212,9 +232,9 @@ async function runE2ETests() {
         fs.writeFileSync('/Users/fredyarroyave/.gemini/antigravity/brain/704a876f-19e0-4a10-ae82-61112409f146/preview-step4.png', Buffer.from(step4Data, 'base64'));
 
         // Test continuation button B: same business
-        console.log('Testing Option B: "Registrar otra venta en este mismo emprendimiento"...');
+        console.log('Testing Option B: "Otra venta aquí"...');
         await evalExpr(`(() => {
-          const sameBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('este mismo emprendimiento'));
+          const sameBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.toLowerCase().includes('otra venta aquí') || b.innerText.toLowerCase().includes('este mismo emprendimiento'));
           if (sameBtn) sameBtn.click();
         })()`);
         await new Promise(r => setTimeout(r, 500));
@@ -229,7 +249,7 @@ async function runE2ETests() {
         })()`);
         await new Promise(r => setTimeout(r, 500));
 
-        const hasHistoryCard = await evalExpr('document.body.innerText.toLowerCase().includes("hilos del origen") && document.body.innerText.toLowerCase().includes("editar cantidades")');
+        const hasHistoryCard = await evalExpr('document.body.innerText.toLowerCase().includes("compostela") && document.body.innerText.toLowerCase().includes("editar cantidades")');
         console.log('Confirmed visit in user history:', hasHistoryCard);
         const hasHistorySeqId = await evalExpr('document.body.innerText.includes("RV-")');
         console.log('Mis Registros includes sequential ID (RV-0001):', hasHistorySeqId);
@@ -250,7 +270,7 @@ async function runE2ETests() {
           if (undoBtn) undoBtn.click();
         })()`);
         await new Promise(r => setTimeout(r, 400));
-        const visitRestored = await evalExpr('document.body.innerText.toLowerCase().includes("hilos del origen")');
+        const visitRestored = await evalExpr('document.body.innerText.toLowerCase().includes("compostela")');
         console.log('Sale restored successfully after Deshacer:', visitRestored);
 
         console.log('\n--- TEST 8: ADMIN ROLE & SHEETJS EXCEL EXPORT ---');
@@ -309,8 +329,6 @@ async function runE2ETests() {
         chrome.kill();
         process.exit(0);
       };
-    });
-  });
 }
 
 runE2ETests().catch(err => {

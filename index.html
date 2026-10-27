@@ -798,7 +798,7 @@
               @click="continueSameBusiness" 
               class="w-full h-12 rounded-xl bg-black text-white text-sm font-bold active-scale transition touch-target flex items-center justify-center space-x-2"
             >
-              <span>Registrar otra venta en este mismo emprendimiento</span>
+              <span>Otra venta aquí</span>
               <span>→</span>
             </button>
 
@@ -808,7 +808,7 @@
               @click="continueOtherBusiness" 
               class="w-full h-12 rounded-xl bg-white text-black border-2 border-black text-sm font-bold active-scale transition touch-target flex items-center justify-center space-x-2"
             >
-              <span>Elegir otro emprendimiento</span>
+              <span>Cambiar emprendimiento</span>
               <span>↻</span>
             </button>
 
@@ -1752,35 +1752,180 @@
 <script>
 const { createApp, ref, computed, onMounted, watch } = Vue;
 
-// 1. Initial 10 Seed Businesses
+// 1. 24 Real Seed Businesses
 const SEED_COMERCIOS = [
-  { id: 'emp-1', nombre: 'Hilos del Origen', activo: true },
-  { id: 'emp-2', nombre: 'Manos de Barro', activo: true },
-  { id: 'emp-3', nombre: 'Letras Nómadas', activo: true },
-  { id: 'emp-4', nombre: 'Taller Macramé & Tejidos Ancestrales', activo: true },
-  { id: 'emp-5', nombre: 'Sastrería Botánica', activo: true },
-  { id: 'emp-6', nombre: 'Raíz de Cobre', activo: true },
-  { id: 'emp-7', nombre: 'Tinta del Valle', activo: true },
-  { id: 'emp-8', nombre: 'Cestería Río Vivo', activo: true },
-  { id: 'emp-9', nombre: 'Urbano Ancestral', activo: true },
-  { id: 'emp-10', nombre: 'Casa Papiro', activo: true }
+  { id: 'emp-1', nombre: 'Compostela', activo: true },
+  { id: 'emp-2', nombre: 'SaboryArte', activo: true },
+  { id: 'emp-3', nombre: 'Delirio miel', activo: true },
+  { id: 'emp-4', nombre: 'Postres Brava', activo: true },
+  { id: 'emp-5', nombre: 'El Solar', activo: true },
+  { id: 'emp-6', nombre: 'Lela Chocolates', activo: true },
+  { id: 'emp-7', nombre: 'JuanDQuesos', activo: true },
+  { id: 'emp-8', nombre: 'Melka', activo: true },
+  { id: 'emp-9', nombre: 'Mecanos', activo: true },
+  { id: 'emp-10', nombre: 'Chockolet', activo: true },
+  { id: 'emp-11', nombre: 'Agua de la peña', activo: true },
+  { id: 'emp-12', nombre: 'Masa Brava', activo: true },
+  { id: 'emp-13', nombre: 'Delicias de Casa by Carito', activo: true },
+  { id: 'emp-14', nombre: 'Oriundo', activo: true },
+  { id: 'emp-15', nombre: 'Cocina real', activo: true },
+  { id: 'emp-16', nombre: 'El Convite', activo: true },
+  { id: 'emp-17', nombre: 'Floremma', activo: true },
+  { id: 'emp-18', nombre: 'Velasquez Artesanal', activo: true },
+  { id: 'emp-19', nombre: 'Grasa fit', activo: true },
+  { id: 'emp-20', nombre: 'Very rice', activo: true },
+  { id: 'emp-21', nombre: 'Las papis', activo: true },
+  { id: 'emp-22', nombre: 'Mole guacamole', activo: true },
+  { id: 'emp-23', nombre: 'Cereales artesano', activo: true },
+  { id: 'emp-24', nombre: 'Salsas Charlie', activo: true },
 ];
 
-// 2. Initial 10 Seed Products with exact prices
+// 2. 113 Real Seed Products with catalog prices
 const SEED_PRODUCTOS = [
-  { id: 'prod-1', codigo: 'PROD-01', nombre: 'Camiseta Algodón Orgánico', precio: 55000, activo: true },
-  { id: 'prod-2', codigo: 'PROD-02', nombre: 'Chaqueta Denim Intervenida', precio: 135000, activo: true },
-  { id: 'prod-3', codigo: 'PROD-03', nombre: 'Mochila Tejida Fique', precio: 78000, activo: true },
-  { id: 'prod-4', codigo: 'PROD-04', nombre: 'Taza Cerámica Artesanal', precio: 32000, activo: true },
-  { id: 'prod-5', codigo: 'PROD-05', nombre: 'Antología Cuentos Locales', precio: 42000, activo: true },
-  { id: 'prod-6', codigo: 'PROD-06', nombre: 'Bitácora Ilustrada', precio: 36000, activo: true },
-  { id: 'prod-7', codigo: 'PROD-07', nombre: 'Camisa Lino Crudo', precio: 92000, activo: true },
-  { id: 'prod-8', codigo: 'PROD-08', nombre: 'Sombrero Palma Iraca', precio: 68000, activo: true },
-  { id: 'prod-9', codigo: 'PROD-09', nombre: 'Novela Gráfica', precio: 48000, activo: true },
-  { id: 'prod-10', codigo: 'PROD-10', nombre: 'Ruana Ligera Algodón', precio: 115000, activo: true }
+  { id: 'prod-1', codigo: 'PROD-001', nombre: 'Galleta Nostalgia x200gr', precio: 12000, activo: true },
+  { id: 'prod-2', codigo: 'PROD-002', nombre: 'Galleta Navideña x200gr', precio: 12000, activo: true },
+  { id: 'prod-3', codigo: 'PROD-003', nombre: 'Galleta Cuca', precio: 1000, activo: true },
+  { id: 'prod-4', codigo: 'PROD-004', nombre: 'Galleta Arroz', precio: 1000, activo: true },
+  { id: 'prod-5', codigo: 'PROD-005', nombre: 'Galleta Arequipe', precio: 1000, activo: true },
+  { id: 'prod-6', codigo: 'PROD-006', nombre: 'Galleta Navideña x130gr', precio: 5000, activo: true },
+  { id: 'prod-7', codigo: 'PROD-007', nombre: 'Sal de Oro', precio: 26000, activo: true },
+  { id: 'prod-8', codigo: 'PROD-008', nombre: 'Sal de Sol', precio: 26000, activo: true },
+  { id: 'prod-9', codigo: 'PROD-009', nombre: 'Sal De la Vida', precio: 26000, activo: true },
+  { id: 'prod-10', codigo: 'PROD-010', nombre: 'Sal Chilemon', precio: 26000, activo: true },
+  { id: 'prod-11', codigo: 'PROD-011', nombre: 'Sal de luna Rosa', precio: 26000, activo: true },
+  { id: 'prod-12', codigo: 'PROD-012', nombre: 'Mezcla Tierra Fuego', precio: 5000, activo: true },
+  { id: 'prod-13', codigo: 'PROD-013', nombre: 'Kit miniatura X6', precio: 60000, activo: true },
+  { id: 'prod-14', codigo: 'PROD-014', nombre: 'Miel Natural 120G', precio: 50000, activo: true },
+  { id: 'prod-15', codigo: 'PROD-015', nombre: 'Miel Natural 300G', precio: 70000, activo: true },
+  { id: 'prod-16', codigo: 'PROD-016', nombre: 'Miel Natural 480G', precio: 80000, activo: true },
+  { id: 'prod-17', codigo: 'PROD-017', nombre: 'Miel Natural 650G', precio: 100000, activo: true },
+  { id: 'prod-18', codigo: 'PROD-018', nombre: 'Miel Panal 150G', precio: 60000, activo: true },
+  { id: 'prod-19', codigo: 'PROD-019', nombre: 'Miel Panal 330G', precio: 120000, activo: true },
+  { id: 'prod-20', codigo: 'PROD-020', nombre: 'Miel Jengibre Limon 120G', precio: 50000, activo: true },
+  { id: 'prod-21', codigo: 'PROD-021', nombre: 'Miel jengibre limon 300G', precio: 70000, activo: true },
+  { id: 'prod-22', codigo: 'PROD-022', nombre: 'Miel jengibre limon 480G', precio: 120000, activo: true },
+  { id: 'prod-23', codigo: 'PROD-023', nombre: 'Miel ajo negro 120G', precio: 50000, activo: true },
+  { id: 'prod-24', codigo: 'PROD-024', nombre: 'Miel ajo negro 300G', precio: 70000, activo: true },
+  { id: 'prod-25', codigo: 'PROD-025', nombre: 'Miel ajo negro 480G', precio: 120000, activo: true },
+  { id: 'prod-26', codigo: 'PROD-026', nombre: 'Miel Picante 120G', precio: 50000, activo: true },
+  { id: 'prod-27', codigo: 'PROD-027', nombre: 'Miel picante 300G', precio: 120000, activo: true },
+  { id: 'prod-28', codigo: 'PROD-028', nombre: 'Miel Cacao 120G', precio: 50000, activo: true },
+  { id: 'prod-29', codigo: 'PROD-029', nombre: 'Miel cacao 300G', precio: 35000, activo: true },
+  { id: 'prod-30', codigo: 'PROD-030', nombre: 'Miel propoleo 120G', precio: 25000, activo: true },
+  { id: 'prod-31', codigo: 'PROD-031', nombre: 'Miel Propoleo 300G', precio: 35000, activo: true },
+  { id: 'prod-32', codigo: 'PROD-032', nombre: 'Postre Proteina', precio: 23900, activo: true },
+  { id: 'prod-33', codigo: 'PROD-033', nombre: 'Chingon', precio: 24000, activo: true },
+  { id: 'prod-34', codigo: 'PROD-034', nombre: 'Yucatan', precio: 19000, activo: true },
+  { id: 'prod-35', codigo: 'PROD-035', nombre: 'Cuzco', precio: 18000, activo: true },
+  { id: 'prod-36', codigo: 'PROD-036', nombre: 'Queretaro', precio: 19000, activo: true },
+  { id: 'prod-37', codigo: 'PROD-037', nombre: 'Xalapa', precio: 18000, activo: true },
+  { id: 'prod-38', codigo: 'PROD-038', nombre: 'Caribe', precio: 18000, activo: true },
+  { id: 'prod-39', codigo: 'PROD-039', nombre: 'Bombones *3', precio: 21000, activo: true },
+  { id: 'prod-40', codigo: 'PROD-040', nombre: 'Bombones *6', precio: 40000, activo: true },
+  { id: 'prod-41', codigo: 'PROD-041', nombre: 'Corazoncitos Sin Azucar', precio: 24000, activo: true },
+  { id: 'prod-42', codigo: 'PROD-042', nombre: 'Galletas', precio: 11000, activo: true },
+  { id: 'prod-43', codigo: 'PROD-043', nombre: 'Caja Blanca Cuadrada', precio: 24000, activo: true },
+  { id: 'prod-44', codigo: 'PROD-044', nombre: 'Masa Pandebono', precio: 40000, activo: true },
+  { id: 'prod-45', codigo: 'PROD-045', nombre: 'Paquete Pandebono', precio: 20000, activo: true },
+  { id: 'prod-46', codigo: 'PROD-046', nombre: 'Pandebono individual', precio: 4000, activo: true },
+  { id: 'prod-47', codigo: 'PROD-047', nombre: 'Miguelucho', precio: 12000, activo: true },
+  { id: 'prod-48', codigo: 'PROD-048', nombre: 'Caja beso y chocolate', precio: 22000, activo: true },
+  { id: 'prod-49', codigo: 'PROD-049', nombre: 'Caja mani panela y cafe', precio: 10000, activo: true },
+  { id: 'prod-50', codigo: 'PROD-050', nombre: 'Bolsa 1/2 cafe -mani', precio: 13000, activo: true },
+  { id: 'prod-51', codigo: 'PROD-051', nombre: 'Turron bolsa', precio: 25000, activo: true },
+  { id: 'prod-52', codigo: 'PROD-052', nombre: 'Turron bolsa pequeña', precio: 7000, activo: true },
+  { id: 'prod-53', codigo: 'PROD-053', nombre: 'Rosquitas', precio: 5000, activo: true },
+  { id: 'prod-54', codigo: 'PROD-054', nombre: 'Arepas De Chocolo', precio: 10000, activo: true },
+  { id: 'prod-55', codigo: 'PROD-055', nombre: 'Tortas chocolo', precio: 10000, activo: true },
+  { id: 'prod-56', codigo: 'PROD-056', nombre: 'Botella de agua', precio: 4000, activo: true },
+  { id: 'prod-57', codigo: 'PROD-057', nombre: 'Pan zanahoria', precio: 28000, activo: true },
+  { id: 'prod-58', codigo: 'PROD-058', nombre: 'Pan arandanos', precio: 30000, activo: true },
+  { id: 'prod-59', codigo: 'PROD-059', nombre: 'Pan semillas', precio: 28000, activo: true },
+  { id: 'prod-60', codigo: 'PROD-060', nombre: 'Pan banano y nueces', precio: 28000, activo: true },
+  { id: 'prod-61', codigo: 'PROD-061', nombre: 'Pan banano y chocolate', precio: 28000, activo: true },
+  { id: 'prod-62', codigo: 'PROD-062', nombre: 'Bagel masa madre', precio: 6000, activo: true },
+  { id: 'prod-63', codigo: 'PROD-063', nombre: 'Pastel', precio: 6000, activo: true },
+  { id: 'prod-64', codigo: 'PROD-064', nombre: 'Rollo de canela', precio: 5000, activo: true },
+  { id: 'prod-65', codigo: 'PROD-065', nombre: 'Pan natural', precio: 26000, activo: true },
+  { id: 'prod-66', codigo: 'PROD-066', nombre: 'Mermelada De Mora', precio: 12000, activo: true },
+  { id: 'prod-67', codigo: 'PROD-067', nombre: 'Mermelada De Frutos Rojos', precio: 12000, activo: true },
+  { id: 'prod-68', codigo: 'PROD-068', nombre: 'Mermelada De Fresa', precio: 12000, activo: true },
+  { id: 'prod-69', codigo: 'PROD-069', nombre: 'Mermelada de Uchuva', precio: 12000, activo: true },
+  { id: 'prod-70', codigo: 'PROD-070', nombre: 'Dip Cilantro', precio: 10000, activo: true },
+  { id: 'prod-71', codigo: 'PROD-071', nombre: 'Dip Pimento', precio: 10000, activo: true },
+  { id: 'prod-72', codigo: 'PROD-072', nombre: 'Tarro Snacks (20und)', precio: 70000, activo: true },
+  { id: 'prod-73', codigo: 'PROD-073', nombre: 'snacks', precio: 3500, activo: true },
+  { id: 'prod-74', codigo: 'PROD-074', nombre: 'Tomate Deshidratado', precio: 13000, activo: true },
+  { id: 'prod-75', codigo: 'PROD-075', nombre: 'Chimichurri', precio: 10000, activo: true },
+  { id: 'prod-76', codigo: 'PROD-076', nombre: 'Caja De Infusiones', precio: 17000, activo: true },
+  { id: 'prod-77', codigo: 'PROD-077', nombre: 'Paquete de Snacks *5', precio: 17000, activo: true },
+  { id: 'prod-78', codigo: 'PROD-078', nombre: 'Mango 60 Gr', precio: 10500, activo: true },
+  { id: 'prod-79', codigo: 'PROD-079', nombre: 'Mango 30Gr', precio: 7500, activo: true },
+  { id: 'prod-80', codigo: 'PROD-080', nombre: 'Banano 60 Gr', precio: 9000, activo: true },
+  { id: 'prod-81', codigo: 'PROD-081', nombre: 'Piña 60 Gr', precio: 15000, activo: true },
+  { id: 'prod-82', codigo: 'PROD-082', nombre: 'Piña 30 Gr', precio: 11000, activo: true },
+  { id: 'prod-83', codigo: 'PROD-083', nombre: 'Mix Fruta 100 Gr', precio: 19000, activo: true },
+  { id: 'prod-84', codigo: 'PROD-084', nombre: 'Mix Fruta 50 Gr', precio: 10000, activo: true },
+  { id: 'prod-85', codigo: 'PROD-085', nombre: 'Nectar de fruta', precio: 4500, activo: true },
+  { id: 'prod-86', codigo: 'PROD-086', nombre: 'Platanitos', precio: 8000, activo: true },
+  { id: 'prod-87', codigo: 'PROD-087', nombre: 'Bolsa Cafe X 454Gr', precio: 59000, activo: true },
+  { id: 'prod-88', codigo: 'PROD-088', nombre: 'Bolsa Cafe X 250Gr', precio: 35000, activo: true },
+  { id: 'prod-89', codigo: 'PROD-089', nombre: 'Bolsa Cafe X 125 Gr', precio: 23000, activo: true },
+  { id: 'prod-90', codigo: 'PROD-090', nombre: 'Instacrem', precio: 1000, activo: true },
+  { id: 'prod-91', codigo: 'PROD-091', nombre: 'Tintos', precio: 4000, activo: true },
+  { id: 'prod-92', codigo: 'PROD-092', nombre: 'Cacao puro en bola', precio: 25000, activo: true },
+  { id: 'prod-93', codigo: 'PROD-093', nombre: 'Chocolatina en bola', precio: 20000, activo: true },
+  { id: 'prod-94', codigo: 'PROD-094', nombre: 'Frascos de nutela', precio: 25000, activo: true },
+  { id: 'prod-95', codigo: 'PROD-095', nombre: 'Cacao en polvo', precio: 25000, activo: true },
+  { id: 'prod-96', codigo: 'PROD-096', nombre: 'Grasa cerdo neutra', precio: 20000, activo: true },
+  { id: 'prod-97', codigo: 'PROD-097', nombre: 'Arroz con leche', precio: 6000, activo: true },
+  { id: 'prod-98', codigo: 'PROD-098', nombre: 'Papas de sabores', precio: 6000, activo: true },
+  { id: 'prod-99', codigo: 'PROD-099', nombre: 'Platanos', precio: 3000, activo: true },
+  { id: 'prod-100', codigo: 'PROD-100', nombre: 'Guacamole 115gr', precio: 7000, activo: true },
+  { id: 'prod-101', codigo: 'PROD-101', nombre: 'Guacamole 250gr', precio: 16000, activo: true },
+  { id: 'prod-102', codigo: 'PROD-102', nombre: 'Guacamole 500gr', precio: 23000, activo: true },
+  { id: 'prod-103', codigo: 'PROD-103', nombre: 'Guacamole 1000gr', precio: 36000, activo: true },
+  { id: 'prod-104', codigo: 'PROD-104', nombre: 'Granola', precio: 25000, activo: true },
+  { id: 'prod-105', codigo: 'PROD-105', nombre: 'Brownie', precio: 10000, activo: true },
+  { id: 'prod-106', codigo: 'PROD-106', nombre: 'Chimichurri', precio: 25000, activo: true },
+  { id: 'prod-107', codigo: 'PROD-107', nombre: 'Cilantro', precio: 23000, activo: true },
+  { id: 'prod-108', codigo: 'PROD-108', nombre: 'Ajo', precio: 14000, activo: true },
+  { id: 'prod-109', codigo: 'PROD-109', nombre: 'Pepinillo', precio: 14000, activo: true },
+  { id: 'prod-110', codigo: 'PROD-110', nombre: 'Dip Pimenton', precio: 15000, activo: true },
+  { id: 'prod-111', codigo: 'PROD-111', nombre: 'Dip frutos rojos', precio: 15000, activo: true },
+  { id: 'prod-112', codigo: 'PROD-112', nombre: 'Dip frutos amarillos', precio: 15000, activo: true },
+  { id: 'prod-113', codigo: 'PROD-113', nombre: 'Dip cebolla', precio: 15000, activo: true },
 ];
 
-// 3. Preloaded Staff Users
+// 3. Real Product Assignment Matrix by Business
+const SEED_COMERCIO_MAP = {
+  'emp-1': ['prod-1', 'prod-2', 'prod-3', 'prod-4', 'prod-5', 'prod-6'],
+  'emp-2': ['prod-7', 'prod-8', 'prod-9', 'prod-10', 'prod-11', 'prod-12', 'prod-13'],
+  'emp-3': ['prod-14', 'prod-15', 'prod-16', 'prod-17', 'prod-18', 'prod-19', 'prod-20', 'prod-21', 'prod-22', 'prod-23', 'prod-24', 'prod-25', 'prod-26', 'prod-27', 'prod-28', 'prod-29', 'prod-30', 'prod-31'],
+  'emp-4': ['prod-32'],
+  'emp-5': ['prod-33', 'prod-34', 'prod-35', 'prod-36', 'prod-37', 'prod-38'],
+  'emp-6': ['prod-39', 'prod-40', 'prod-41', 'prod-42', 'prod-43'],
+  'emp-7': ['prod-44', 'prod-45', 'prod-46'],
+  'emp-8': ['prod-47'],
+  'emp-9': ['prod-48', 'prod-49', 'prod-50', 'prod-51', 'prod-52', 'prod-53'],
+  'emp-10': ['prod-54', 'prod-55'],
+  'emp-11': ['prod-56'],
+  'emp-12': ['prod-57', 'prod-58', 'prod-59', 'prod-60', 'prod-61', 'prod-62', 'prod-63', 'prod-64', 'prod-65'],
+  'emp-13': ['prod-66', 'prod-67', 'prod-68', 'prod-69', 'prod-70', 'prod-71'],
+  'emp-14': ['prod-72', 'prod-73', 'prod-74', 'prod-75', 'prod-76', 'prod-77', 'prod-78', 'prod-79', 'prod-80', 'prod-81', 'prod-82', 'prod-83', 'prod-84'],
+  'emp-15': ['prod-85'],
+  'emp-16': ['prod-86'],
+  'emp-17': ['prod-87', 'prod-88', 'prod-89', 'prod-90', 'prod-91'],
+  'emp-18': ['prod-92', 'prod-93', 'prod-94', 'prod-95'],
+  'emp-19': ['prod-96'],
+  'emp-20': ['prod-97'],
+  'emp-21': ['prod-98', 'prod-99'],
+  'emp-22': ['prod-100', 'prod-101', 'prod-102', 'prod-103'],
+  'emp-23': ['prod-104', 'prod-105'],
+  'emp-24': ['prod-106', 'prod-107', 'prod-108', 'prod-109', 'prod-110', 'prod-111', 'prod-112', 'prod-113'],
+};
+
+// 4. Preloaded Staff Users
 const SEED_USERS = [
   { email: 'melissa@campo.co', nombre: 'Melissa', role: 'vendedora' },
   { email: 'jennifer@campo.co', nombre: 'Jennifer', role: 'vendedora' },
@@ -2142,24 +2287,24 @@ createApp({
           staffUsers.value = SEED_USERS;
         }
 
-        const storedComercios = localStorage.getItem('rm_comercios');
-        comercios.value = storedComercios ? JSON.parse(storedComercios) : SEED_COMERCIOS;
-        comercios.value.forEach(c => { delete c.direccion; delete c.categoria; });
+        const CATALOG_VERSION = 'v20261026_real';
+        const storedCatalogVersion = localStorage.getItem('rm_catalog_version');
 
-        const storedProductos = localStorage.getItem('rm_productos');
-        productos.value = storedProductos ? JSON.parse(storedProductos) : SEED_PRODUCTOS;
-        productos.value.forEach(p => { delete p.categoria; });
-
-        const storedMap = localStorage.getItem('rm_comercio_productos');
-        if (storedMap) {
-          comercioProductsMap.value = JSON.parse(storedMap);
+        if (storedCatalogVersion !== CATALOG_VERSION) {
+          comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
+          productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
+          comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
+          localStorage.setItem('rm_catalog_version', CATALOG_VERSION);
+          saveState();
         } else {
-          // By default, assign all 10 seed products to all businesses
-          const defaultMap = {};
-          comercios.value.forEach(c => {
-            defaultMap[c.id] = productos.value.map(p => p.id);
-          });
-          comercioProductsMap.value = defaultMap;
+          const storedComercios = localStorage.getItem('rm_comercios');
+          comercios.value = storedComercios ? JSON.parse(storedComercios) : JSON.parse(JSON.stringify(SEED_COMERCIOS));
+
+          const storedProductos = localStorage.getItem('rm_productos');
+          productos.value = storedProductos ? JSON.parse(storedProductos) : JSON.parse(JSON.stringify(SEED_PRODUCTOS));
+
+          const storedMap = localStorage.getItem('rm_comercio_productos');
+          comercioProductsMap.value = storedMap ? JSON.parse(storedMap) : JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
         }
 
         const storedVisitas = localStorage.getItem('rm_visitas');
@@ -2907,16 +3052,13 @@ createApp({
 
     // Reset Seed Data
     const resetToSeedData = () => {
-      if (!confirm('¿Restablecer comercios y productos al catálogo inicial original?')) return;
-      comercios.value = SEED_COMERCIOS;
-      productos.value = SEED_PRODUCTOS;
-      const defaultMap = {};
-      comercios.value.forEach(c => {
-        defaultMap[c.id] = productos.value.map(p => p.id);
-      });
-      comercioProductsMap.value = defaultMap;
+      if (!confirm('¿Restablecer comercios y productos al catálogo de 24 emprendimientos reales?')) return;
+      comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
+      productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
+      comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
+      localStorage.setItem('rm_catalog_version', 'v20261026_real');
       saveState();
-      showToast('Catálogo inicial restablecido con éxito', 'success');
+      showToast('Catálogo de 24 emprendimientos y 113 productos restablecido con éxito', 'success');
     };
 
     // -------------------------------------------------------------------
