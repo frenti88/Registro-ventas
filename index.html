@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Registro Ventas</title>
+  <title>Ventas de la Tiendita</title>
   
   <!-- Product Sans & Google Sans Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -249,7 +249,7 @@
   <!-- TOP HEADER / STATUS BAR -->
   <header class="sticky top-0 z-40 bg-black text-white px-4 py-3.5 border-b border-gray-800 flex items-center justify-between">
     <div>
-      <h1 class="text-lg font-bold leading-tight tracking-tight">Registro Ventas</h1>
+      <h1 class="text-lg font-bold leading-tight tracking-tight">Ventas de la Tiendita</h1>
     </div>
 
     <!-- Right Controls: User Pill -->
@@ -1991,7 +1991,7 @@ function doPost(e) {
     if (payload.action === 'PING') {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        message: 'Conexión exitosa con Registro Ventas'
+        message: 'Conexión exitosa con Ventas de la Tiendita'
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -3096,7 +3096,7 @@ createApp({
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Todas las ventas");
-        XLSX.writeFile(wb, "Ventas_Campo_Registro_Ventas.xlsx");
+        XLSX.writeFile(wb, "Ventas_de_la_Tiendita.xlsx");
         showToast('Archivo Excel descargado con éxito', 'success');
       } else {
         // Fallback to CSV if SheetJS unavailable
@@ -3136,7 +3136,7 @@ createApp({
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", "Ventas_Campo_Registro_Ventas.csv");
+      link.setAttribute("download", "Ventas_de_la_Tiendita.csv");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
