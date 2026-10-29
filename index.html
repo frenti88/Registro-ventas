@@ -528,7 +528,19 @@
         <div v-if="step === 1" class="space-y-4">
           <!-- Search Header -->
           <div class="space-y-2">
-            <h2 class="text-xl font-extrabold text-black tracking-tight">Elige un emprendimiento</h2>
+            <div class="flex items-center justify-between">
+              <h2 class="text-xl font-extrabold text-black tracking-tight">Elige un emprendimiento</h2>
+              <button 
+                type="button"
+                @click="syncCloudCatalog(true)"
+                :disabled="isSyncingCatalog || !webhookUrl"
+                class="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-100 flex items-center space-x-1.5 active-scale transition text-gray-700 shadow-2xs"
+                title="Sincronizar y actualizar productos y emprendimientos desde Google Sheets"
+              >
+                <span :class="{'animate-spin': isSyncingCatalog}">🔄</span>
+                <span class="text-[11px] font-bold">Actualizar</span>
+              </button>
+            </div>
             
             <!-- Real-time Search Box -->
             <div class="relative">
@@ -2287,6 +2299,101 @@ var BUSINESS_HEADERS = [
   "Estado"
 ];
 
+/**
+ * Lee y consolida el catálogo de productos y emprendimientos desde el Google Sheet.
+ * Soporta la pestaña 'Catálogo de Productos' o pestañas individuales por emprendedor.
+ */
+function getCatalogData(ss) {
+  var catalogo = [];
+  var comerciosMap = {};
+  var comerciosList = [];
+
+  // 1. Intentar leer de la pestaña 'Catálogo de Productos'
+  var catSheet = ss.getSheetByName("Catálogo de Productos");
+  if (catSheet && catSheet.getLastRow() > 1) {
+    var lastRow = catSheet.getLastRow();
+    var lastCol = Math.max(catSheet.getLastColumn(), 5);
+    var data = catSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var emp = String(row[0] || '').trim();
+      var prod = String(row[1] || '').trim();
+      var rawP = row[2];
+      var price = typeof rawP === 'number' ? rawP : Number(String(rawP || '0').replace(/[^0-9.-]/g, ''));
+      var code = String(row[3] || '').trim();
+      var status = String(row[4] || 'Activo').trim();
+
+      if (emp && prod && !isNaN(price) && price > 0) {
+        catalogo.push({
+          comercio: emp,
+          producto: prod,
+          precio: price,
+          codigo: code,
+          estado: status
+        });
+        if (!comerciosMap[emp]) {
+          comerciosMap[emp] = {
+            id: 'emp-' + (Object.keys(comerciosMap).length + 1),
+            nombre: emp,
+            activo: status !== 'Inactivo'
+          };
+        }
+      }
+    }
+  }
+
+  // 2. Si no hay catálogo en esa hoja, leer de cualquier hoja que no sea del sistema
+  if (catalogo.length === 0) {
+    var systemSheets = [
+      "todas las ventas", "sin vendedor", "daniel", "jhon", "julian", 
+      "administrador", "resumen", "reporte", "hoja 1", "sheet1"
+    ];
+    var allSheets = ss.getSheets();
+    for (var s = 0; s < allSheets.length; s++) {
+      var sName = allSheets[s].getName();
+      if (systemSheets.indexOf(sName.toLowerCase()) !== -1) continue;
+      
+      var sh = allSheets[s];
+      if (sh.getLastRow() > 1) {
+        var sData = sh.getRange(2, 1, sh.getLastRow() - 1, Math.min(sh.getLastColumn(), 5)).getValues();
+        for (var r = 0; r < sData.length; r++) {
+          var rRow = sData[r];
+          var pEmp = String(rRow[0] || sName).trim();
+          var pProd = String(rRow[1] || '').trim();
+          var rawPrice = rRow[2];
+          var pPrice = typeof rawPrice === 'number' ? rawPrice : Number(String(rawPrice || '0').replace(/[^0-9.-]/g, ''));
+          
+          if (pProd && !isNaN(pPrice) && pPrice > 0) {
+            catalogo.push({
+              comercio: pEmp,
+              producto: pProd,
+              precio: pPrice,
+              codigo: '',
+              estado: 'Activo'
+            });
+            if (!comerciosMap[pEmp]) {
+              comerciosMap[pEmp] = {
+                id: 'emp-' + (Object.keys(comerciosMap).length + 1),
+                nombre: pEmp,
+                activo: true
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (var k in comerciosMap) {
+    comerciosList.push(comerciosMap[k]);
+  }
+
+  return {
+    catalogo: catalogo,
+    comercios: comerciosList
+  };
+}
+
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var master = ss.getSheetByName("Todas las ventas");
@@ -2302,14 +2409,18 @@ function doGet(e) {
     }
   }
 
+  var catData = getCatalogData(ss);
+
   return ContentService.createTextOutput(JSON.stringify({
     status: 'online',
     documento: ss.getName(),
     maxSeq: maxSeq,
     nextSeq: maxSeq + 1,
-    mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y listo para recibir ventas y catálogo.',
+    mensaje: 'Servicio Webhook de Ventas de la Tiendita activo y sincronizado con catálogo.',
     columnas: STANDARD_HEADERS,
     vendedores: ['Daniel', 'Jhon', 'Julian', 'Administrador'],
+    catalogo: catData.catalogo,
+    comercios: catData.comercios,
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -2979,35 +3090,141 @@ createApp({
     };
 
     /**
-     * Sincroniza el contador consecutivo (RV-XXXX) con Google Sheets para que
-     * múltiples celulares compartan el número correcto y no colisionen.
+     * Aplica e integra cambios de catálogo descargados desde Google Sheets (Nube -> App).
+     * Respeta la estructura local, agrega nuevos negocios o productos y actualiza precios/estados.
      */
-    const syncCloudSequence = async () => {
-      if (!isOnline.value || !webhookUrl.value) return;
+    const applyCatalogFromCloud = (cloudComercios, cloudCatalogo) => {
+      if (!Array.isArray(cloudCatalogo) || cloudCatalogo.length === 0) return false;
+      let changed = false;
+
+      // 1. Sincronizar Emprendimientos
+      cloudCatalogo.forEach(item => {
+        const cName = (item.comercio || '').trim();
+        if (!cName) return;
+        const existing = comercios.value.find(c => c.nombre.trim().toLowerCase() === cName.toLowerCase());
+        if (!existing) {
+          const nextId = 'emp-' + (comercios.value.length + 1);
+          comercios.value.push({
+            id: nextId,
+            nombre: cName,
+            activo: item.estado !== 'Inactivo'
+          });
+          comercioProductsMap.value[nextId] = [];
+          changed = true;
+        } else if (item.estado === 'Inactivo' && existing.activo !== false) {
+          existing.activo = false;
+          changed = true;
+        } else if (item.estado === 'Activo' && existing.activo === false) {
+          existing.activo = true;
+          changed = true;
+        }
+      });
+
+      // 2. Sincronizar Productos y asignaciones
+      cloudCatalogo.forEach(item => {
+        const pName = (item.producto || '').trim();
+        const cName = (item.comercio || '').trim();
+        const pPrice = Number(item.precio || 0);
+        if (!pName || isNaN(pPrice) || pPrice <= 0) return;
+
+        const com = comercios.value.find(c => c.nombre.trim().toLowerCase() === cName.toLowerCase());
+        if (!com) return;
+
+        if (!comercioProductsMap.value[com.id]) {
+          comercioProductsMap.value[com.id] = [];
+        }
+        const assignedIds = comercioProductsMap.value[com.id];
+        let prod = productos.value.find(p => assignedIds.includes(p.id) && p.nombre.trim().toLowerCase() === pName.toLowerCase());
+
+        if (prod) {
+          if (prod.precio !== pPrice) {
+            prod.precio = pPrice;
+            changed = true;
+          }
+          if (item.estado === 'Inactivo' && prod.activo !== false) {
+            prod.activo = false;
+            changed = true;
+          } else if (item.estado === 'Activo' && prod.activo === false) {
+            prod.activo = true;
+            changed = true;
+          }
+        } else {
+          const nextProdId = 'prod-' + (productos.value.length + 1);
+          const nextCode = item.codigo || ('PROD-' + String(productos.value.length + 1).padStart(2, '0'));
+          const newProd = {
+            id: nextProdId,
+            codigo: nextCode,
+            nombre: pName,
+            precio: pPrice,
+            activo: item.estado !== 'Inactivo'
+          };
+          productos.value.push(newProd);
+          comercioProductsMap.value[com.id].push(nextProdId);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        saveState();
+      }
+      return changed;
+    };
+
+    /**
+     * Sincroniza tanto el contador consecutivo (RV-XXXX) como el catálogo desde Google Sheets.
+     */
+    const syncCloudCatalog = async (forceNotify = false) => {
+      if (!isOnline.value || !webhookUrl.value) {
+        if (forceNotify) showToast('Sin conexión a internet o webhook no configurado', 'error');
+        return;
+      }
+      isSyncingCatalog.value = true;
       try {
         const res = await fetch(webhookUrl.value);
         if (res.ok) {
           const data = await res.json();
-          if (data && typeof data.maxSeq === 'number' && data.maxSeq > lastRegSeq.value) {
-            lastRegSeq.value = data.maxSeq;
-            localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+          if (data) {
+            // 1. Sincronizar consecutivo
+            if (typeof data.maxSeq === 'number' && data.maxSeq > lastRegSeq.value) {
+              lastRegSeq.value = data.maxSeq;
+              localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+            }
+
+            // 2. Sincronizar catálogo si la hoja de cálculo tiene información
+            let catalogUpdated = false;
+            if (Array.isArray(data.catalogo) && data.catalogo.length > 0) {
+              catalogUpdated = applyCatalogFromCloud(data.comercios, data.catalogo);
+            }
+
+            if (forceNotify) {
+              if (catalogUpdated) {
+                showToast(`Catálogo actualizado: ${comercios.value.length} emprendimientos y ${productos.value.length} productos`, 'success');
+              } else {
+                showToast(`Catálogo al día (${comercios.value.length} emprendimientos disponibles)`, 'success');
+              }
+            }
           }
         }
       } catch (err) {
-        // Fallback silencioso si no hay conexión al iniciar
+        console.warn('Error sincronizando con webhook:', err);
+        if (forceNotify) {
+          showToast('No se pudo conectar con Google Sheets para actualizar catálogo', 'error');
+        }
+      } finally {
+        isSyncingCatalog.value = false;
       }
     };
 
     onMounted(() => {
       loadFromLocalStorage();
       initSeenVisitsForUser();
-      syncCloudSequence();
+      syncCloudCatalog();
 
       // Network listeners
       window.addEventListener('online', () => {
         isOnline.value = true;
         syncPendingQueue();
-        syncCloudSequence();
+        syncCloudCatalog();
       });
       window.addEventListener('offline', () => {
         isOnline.value = false;
@@ -4337,6 +4554,7 @@ createApp({
       saveProductModal,
       deleteProduct,
       syncCatalogToWebhook,
+      syncCloudCatalog,
       toggleUserRole,
       resetToSeedData,
       exportToExcel,
