@@ -2888,7 +2888,7 @@ createApp({
     const currentInspirationalMessage = ref('');
 
     // Sequence counter for RV-0001
-    const lastRegSeq = ref(0);
+    const lastRegSeq = ref(86);
 
     const parseSeqFromId = (idStr) => {
       if (!idStr) return 0;
@@ -2897,6 +2897,9 @@ createApp({
     };
 
     const getNextRegistroId = () => {
+      if (lastRegSeq.value < 86) {
+        lastRegSeq.value = 86;
+      }
       lastRegSeq.value += 1;
       localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
       return `RV-${String(lastRegSeq.value).padStart(4, '0')}`;
@@ -3011,8 +3014,8 @@ createApp({
         const storedVisitas = localStorage.getItem('rm_visitas');
         visitas.value = storedVisitas ? JSON.parse(storedVisitas) : [];
 
-        // Calculate maximum sequence number for RV-XXXX pattern
-        let maxSeq = parseInt(localStorage.getItem('rm_last_reg_seq') || '0', 10);
+        // Calculate maximum sequence number for RV-XXXX pattern (mínimo 86 para evitar colisiones con ventas existentes)
+        let maxSeq = Math.max(parseInt(localStorage.getItem('rm_last_reg_seq') || '86', 10), 86);
         visitas.value.forEach(v => {
           const vSeq = parseSeqFromId(v.id);
           if (vSeq > maxSeq) maxSeq = vSeq;
@@ -3171,39 +3174,74 @@ createApp({
     };
 
     /**
+     * Consulta directamente la hoja pública de Google Sheets para conocer en vivo
+     * el último número consecutivo utilizado y evitar colisiones entre distintos celulares.
+     */
+    const syncCloudMaxSequence = async () => {
+      try {
+        const sheetId = '1OpLd2z41cIuQptUCDV7QkVV7vO6SGGNka7JB1KRUOZU';
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Todas%20las%20ventas&tq=${encodeURIComponent('select A')}`;
+        const res = await fetch(gvizUrl);
+        if (res.ok) {
+          const csv = await res.text();
+          const matches = csv.match(/RV-(\d+)/gi);
+          if (matches) {
+            let highest = Math.max(lastRegSeq.value, 86);
+            matches.forEach(m => {
+              const num = parseInt(m.replace(/RV-/i, ''), 10);
+              if (num > highest) highest = num;
+            });
+            if (highest > lastRegSeq.value) {
+              lastRegSeq.value = highest;
+              localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback sequence check:', err);
+      }
+    };
+
+    /**
      * Sincroniza tanto el contador consecutivo (RV-XXXX) como el catálogo desde Google Sheets.
      */
     const syncCloudCatalog = async (forceNotify = false) => {
-      if (!isOnline.value || !webhookUrl.value) {
-        if (forceNotify) showToast('Sin conexión a internet o webhook no configurado', 'error');
+      if (!isOnline.value) {
+        if (forceNotify) showToast('Sin conexión a internet', 'error');
         return;
       }
       isSyncingCatalog.value = true;
       try {
-        const res = await fetch(webhookUrl.value);
-        if (res.ok) {
-          const data = await res.json();
-          if (data) {
-            // 1. Sincronizar consecutivo
-            if (typeof data.maxSeq === 'number' && data.maxSeq > lastRegSeq.value) {
-              lastRegSeq.value = data.maxSeq;
-              localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
-            }
+        // 1. Sincronizar consecutivo más reciente directamente desde Google Sheets
+        await syncCloudMaxSequence();
 
-            // 2. Sincronizar catálogo si la hoja de cálculo tiene información
-            let catalogUpdated = false;
-            if (Array.isArray(data.catalogo) && data.catalogo.length > 0) {
-              catalogUpdated = applyCatalogFromCloud(data.comercios, data.catalogo);
-            }
+        // 2. Sincronizar catálogo vía Webhook si está disponible
+        if (webhookUrl.value) {
+          const res = await fetch(webhookUrl.value);
+          if (res.ok) {
+            const data = await res.json();
+            if (data) {
+              if (typeof data.maxSeq === 'number' && data.maxSeq > lastRegSeq.value) {
+                lastRegSeq.value = data.maxSeq;
+                localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+              }
 
-            if (forceNotify) {
-              if (catalogUpdated) {
-                showToast(`Catálogo actualizado: ${comercios.value.length} emprendimientos y ${productos.value.length} productos`, 'success');
-              } else {
-                showToast(`Catálogo al día (${comercios.value.length} emprendimientos disponibles)`, 'success');
+              let catalogUpdated = false;
+              if (Array.isArray(data.catalogo) && data.catalogo.length > 0) {
+                catalogUpdated = applyCatalogFromCloud(data.comercios, data.catalogo);
+              }
+
+              if (forceNotify) {
+                if (catalogUpdated) {
+                  showToast(`Catálogo actualizado: ${comercios.value.length} emprendimientos y ${productos.value.length} productos`, 'success');
+                } else {
+                  showToast(`Catálogo al día (${comercios.value.length} emprendimientos disponibles)`, 'success');
+                }
               }
             }
           }
+        } else if (forceNotify) {
+          showToast('Consecutivo verificado con éxito', 'success');
         }
       } catch (err) {
         console.warn('Error sincronizando con webhook:', err);
@@ -3218,13 +3256,17 @@ createApp({
     onMounted(() => {
       loadFromLocalStorage();
       initSeenVisitsForUser();
-      syncCloudCatalog();
+      syncCloudMaxSequence().then(() => {
+        syncCloudCatalog();
+      });
 
       // Network listeners
       window.addEventListener('online', () => {
         isOnline.value = true;
-        syncPendingQueue();
-        syncCloudCatalog();
+        syncCloudMaxSequence().then(() => {
+          syncPendingQueue();
+          syncCloudCatalog();
+        });
       });
       window.addEventListener('offline', () => {
         isOnline.value = false;
@@ -3585,6 +3627,12 @@ createApp({
       const isoUtc = now.toISOString();
       const { fecha, hora } = getBogotaDateTime(isoUtc);
 
+      // Asegurar que el contador secuencial tenga como piso mínimo 86 para no colisionar con ventas previas
+      if (lastRegSeq.value < 86) {
+        lastRegSeq.value = 86;
+        localStorage.setItem('rm_last_reg_seq', '86');
+      }
+
       // Flattened sold items with sequential RV-XXXX sequence (e.g. RV-0001, RV-0002)
       const itemsPayload = activeCartItems.value.map((it) => ({
         registroId: getNextRegistroId(),
@@ -3651,6 +3699,19 @@ createApp({
 
     const attemptSyncVisit = async (visitRecord) => {
       if (!webhookUrl.value) return;
+
+      // Garantía anti-colisión: si el registro tiene un ID menor o igual a 86 (que ya existe en la hoja),
+      // le reasignamos automáticamente el siguiente consecutivo libre para que Google Sheets lo acepte de inmediato
+      const idSeq = parseSeqFromId(visitRecord.id);
+      if (idSeq <= 86) {
+        visitRecord.id = getNextRegistroId();
+        if (Array.isArray(visitRecord.items)) {
+          visitRecord.items.forEach(it => {
+            it.registroId = getNextRegistroId();
+          });
+        }
+        saveState();
+      }
 
       const payload = {
         action: 'SYNC_SALES',
