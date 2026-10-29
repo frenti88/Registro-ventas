@@ -2025,7 +2025,7 @@
 <script>
 const { createApp, ref, computed, onMounted, watch } = Vue;
 
-// 1. 24 Real Seed Businesses
+// 1. 26 Real Seed Businesses
 const SEED_COMERCIOS = [
   { id: 'emp-1', nombre: 'Compostela', activo: true },
   { id: 'emp-2', nombre: 'SaboryArte', activo: true },
@@ -2051,9 +2051,11 @@ const SEED_COMERCIOS = [
   { id: 'emp-22', nombre: 'Mole guacamole', activo: true },
   { id: 'emp-23', nombre: 'Cereales artesano', activo: true },
   { id: 'emp-24', nombre: 'Salsas Charlie', activo: true },
+  { id: 'emp-25', nombre: 'Natural Vienna', activo: true },
+  { id: 'emp-26', nombre: 'Café Hacherit', activo: true },
 ];
 
-// 2. 113 Real Seed Products with catalog prices
+// 2. 125 Real Seed Products with catalog prices
 const SEED_PRODUCTOS = [
   { id: 'prod-1', codigo: 'PROD-001', nombre: 'Galleta Nostalgia x200gr', precio: 12000, activo: true },
   { id: 'prod-2', codigo: 'PROD-002', nombre: 'Galleta Navideña x200gr', precio: 12000, activo: true },
@@ -2168,6 +2170,18 @@ const SEED_PRODUCTOS = [
   { id: 'prod-111', codigo: 'PROD-111', nombre: 'Dip frutos rojos', precio: 15000, activo: true },
   { id: 'prod-112', codigo: 'PROD-112', nombre: 'Dip frutos amarillos', precio: 15000, activo: true },
   { id: 'prod-113', codigo: 'PROD-113', nombre: 'Dip cebolla', precio: 15000, activo: true },
+  { id: 'prod-114', codigo: 'PROD-114', nombre: 'Bora caja', precio: 115000, activo: true },
+  { id: 'prod-115', codigo: 'PROD-115', nombre: 'Bora individual', precio: 7500, activo: true },
+  { id: 'prod-116', codigo: 'PROD-116', nombre: 'Colágeno', precio: 75000, activo: true },
+  { id: 'prod-117', codigo: 'PROD-117', nombre: 'Creatina', precio: 80000, activo: true },
+  { id: 'prod-118', codigo: 'PROD-118', nombre: 'Honey negro 250gr', precio: 30000, activo: true },
+  { id: 'prod-119', codigo: 'PROD-119', nombre: 'Honey negro 500gr', precio: 60000, activo: true },
+  { id: 'prod-120', codigo: 'PROD-120', nombre: 'Honey rojo 250gr', precio: 35000, activo: true },
+  { id: 'prod-121', codigo: 'PROD-121', nombre: 'Honey rojo 500gr', precio: 70000, activo: true },
+  { id: 'prod-122', codigo: 'PROD-122', nombre: 'Suave lavado 250gr', precio: 30000, activo: true },
+  { id: 'prod-123', codigo: 'PROD-123', nombre: 'Suave lavado 500gr', precio: 60000, activo: true },
+  { id: 'prod-124', codigo: 'PROD-124', nombre: 'Geisha 250gr', precio: 50000, activo: true },
+  { id: 'prod-125', codigo: 'PROD-125', nombre: 'Café individual', precio: 4000, activo: true },
 ];
 
 // 3. Real Product Assignment Matrix by Business
@@ -2196,6 +2210,8 @@ const SEED_COMERCIO_MAP = {
   'emp-22': ['prod-100', 'prod-101', 'prod-102', 'prod-103'],
   'emp-23': ['prod-104', 'prod-105'],
   'emp-24': ['prod-106', 'prod-107', 'prod-108', 'prod-109', 'prod-110', 'prod-111', 'prod-112', 'prod-113'],
+  'emp-25': ['prod-114', 'prod-115', 'prod-116', 'prod-117'],
+  'emp-26': ['prod-118', 'prod-119', 'prod-120', 'prod-121', 'prod-122', 'prod-123', 'prod-124', 'prod-125'],
 };
 
 // 4. Preloaded Staff Users
@@ -2859,7 +2875,7 @@ createApp({
           staffUsers.value = storedUsers ? JSON.parse(storedUsers) : JSON.parse(JSON.stringify(SEED_USERS));
         }
 
-        const CATALOG_VERSION = 'v20261026_real_24';
+        const CATALOG_VERSION = 'v20261028_real_26';
         const storedCatalogVersion = localStorage.getItem('rm_catalog_version');
 
         if (storedCatalogVersion !== CATALOG_VERSION) {
@@ -3895,15 +3911,15 @@ createApp({
 
     // Reset Seed Data
     const resetToSeedData = () => {
-      if (!confirm('¿Restablecer comercios y productos al catálogo de 24 emprendimientos reales?')) return;
+      if (!confirm('¿Restablecer comercios y productos al catálogo de 26 emprendimientos reales?')) return;
       comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
       productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
       comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
-      localStorage.setItem('rm_catalog_version', 'v20261026_real_24');
+      localStorage.setItem('rm_catalog_version', 'v20261028_real_26');
       saveState();
       // Auto-sync reset catalog with Google Sheets
       syncCatalogToWebhook(true);
-      showToast('Catálogo de 24 emprendimientos y 113 productos restablecido y sincronizado con éxito', 'success');
+      showToast('Catálogo de 26 emprendimientos y 125 productos restablecido y sincronizado con éxito', 'success');
     };
 
     // -------------------------------------------------------------------
