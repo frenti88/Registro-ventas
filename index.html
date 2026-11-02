@@ -3532,7 +3532,7 @@ createApp({
         syncCloudCatalog();
       });
 
-      // Network listeners
+      // Network & foreground listeners (garantiza que cuando cada vendedor desbloquea su celular en su turno, actualice el consecutivo en vivo)
       window.addEventListener('online', () => {
         isOnline.value = true;
         syncCloudMaxSequence().then(() => {
@@ -3543,6 +3543,23 @@ createApp({
       });
       window.addEventListener('offline', () => {
         isOnline.value = false;
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine) {
+          isOnline.value = true;
+          syncCloudMaxSequence().then(() => {
+            syncPendingQueue();
+            syncSalesFromSupabase();
+          });
+        }
+      });
+      window.addEventListener('focus', () => {
+        if (navigator.onLine) {
+          isOnline.value = true;
+          syncCloudMaxSequence().then(() => {
+            syncPendingQueue();
+          });
+        }
       });
 
       // Default random quote
@@ -3900,6 +3917,19 @@ createApp({
       const isoUtc = now.toISOString();
       const { fecha, hora } = getBogotaDateTime(isoUtc);
 
+      // Si hay internet, consultar rápidamente el último consecutivo en Supabase y Google Sheets (máx 2.5s)
+      // antes de asignar el ID RV-XXXX para que ningún celular repita el número de otro vendedor
+      if (isOnline.value) {
+        try {
+          await Promise.race([
+            syncCloudMaxSequence(),
+            new Promise(resolve => setTimeout(resolve, 2500))
+          ]);
+        } catch (e) {
+          console.warn('Timeout sequence pre-check:', e);
+        }
+      }
+
       // Asegurar que el contador secuencial tenga como piso mínimo 227 para no colisionar con ventas previas
       if (lastRegSeq.value < 227) {
         lastRegSeq.value = 227;
@@ -3973,17 +4003,36 @@ createApp({
     const attemptSyncVisit = async (visitRecord) => {
       if (!webhookUrl.value && !supabaseEnabled.value) return;
 
-      // Garantía anti-colisión: si el registro tiene un ID menor o igual a 86 (que ya existe en la hoja),
-      // le reasignamos automáticamente el siguiente consecutivo libre para que Google Sheets lo acepte de inmediato
-      const idSeq = parseSeqFromId(visitRecord.id);
-      if (idSeq <= 86) {
-        visitRecord.id = getNextRegistroId();
-        if (Array.isArray(visitRecord.items)) {
-          visitRecord.items.forEach(it => {
-            it.registroId = getNextRegistroId();
+      // 1. Verificar en vivo si el ID fue tomado por otro celular mientras este teléfono estaba offline
+      if (supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) {
+        try {
+          const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+          const checkRes = await fetch(`${baseUrl}/rest/v1/visitas_ventas?id=eq.${encodeURIComponent(visitRecord.id)}&select=id,fecha_utc,usuario_email`, {
+            headers: {
+              apikey: supabaseConfig.value.anonKey,
+              Authorization: `Bearer ${supabaseConfig.value.anonKey}`
+            }
           });
+          if (checkRes.ok) {
+            const existingRows = await checkRes.json();
+            const collision = Array.isArray(existingRows) && existingRows.length > 0 &&
+              existingRows[0].fecha_utc !== visitRecord.fechaUtc &&
+              existingRows[0].usuario_email !== visitRecord.usuarioEmail;
+
+            if (collision || parseSeqFromId(visitRecord.id) <= 86) {
+              await syncCloudMaxSequence();
+              visitRecord.id = getNextRegistroId();
+              if (Array.isArray(visitRecord.items)) {
+                visitRecord.items.forEach((it, idx) => {
+                  it.registroId = idx === 0 ? visitRecord.id : getNextRegistroId();
+                });
+              }
+              saveState();
+            }
+          }
+        } catch (checkErr) {
+          console.warn('Anti-collision check warning:', checkErr);
         }
-        saveState();
       }
 
       const payload = {
@@ -4000,35 +4049,46 @@ createApp({
       };
 
       try {
+        let sheetsOk = !webhookUrl.value || !!visitRecord.syncedSheets;
+        let supabaseOk = !(supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) || !!visitRecord.syncedSupabase;
+
         const tasks = [];
-        if (webhookUrl.value) {
+        if (!sheetsOk) {
           tasks.push(
             fetch(webhookUrl.value, {
               method: 'POST',
               mode: 'no-cors', // standard for Google Apps Script redirects
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify(payload)
+            }).then(() => {
+              sheetsOk = true;
+              visitRecord.syncedSheets = true;
             })
           );
         }
-        if (supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) {
-          tasks.push(syncVisitToSupabase(visitRecord));
+        if (!supabaseOk) {
+          tasks.push(
+            syncVisitToSupabase(visitRecord).then(() => {
+              supabaseOk = true;
+              visitRecord.syncedSupabase = true;
+            })
+          );
         }
 
-        const results = await Promise.allSettled(tasks);
-        const anySuccess = results.some(r => r.status === 'fulfilled');
-        if (!anySuccess) {
-          throw new Error('Ambos destinos fallaron al sincronizar');
-        }
+        await Promise.allSettled(tasks);
 
-        visitRecord.syncStatus = 'sincronizado';
-        if (lastConfirmedVisit.value && lastConfirmedVisit.value.id === visitRecord.id) {
-          lastConfirmedVisit.value.syncStatus = 'sincronizado';
+        if (sheetsOk && supabaseOk) {
+          visitRecord.syncStatus = 'sincronizado';
+          if (lastConfirmedVisit.value && lastConfirmedVisit.value.id === visitRecord.id) {
+            lastConfirmedVisit.value.syncStatus = 'sincronizado';
+          }
+          // Solo se retira de la cola cuando AMBOS (Google Sheets y Supabase) confirmaron guardado
+          pendingQueue.value = pendingQueue.value.filter(q => q.id !== visitRecord.id);
+          saveState();
+        } else {
+          visitRecord.syncStatus = 'pendiente';
+          saveState();
         }
-
-        // Remove from pending queue
-        pendingQueue.value = pendingQueue.value.filter(q => q.id !== visitRecord.id);
-        saveState();
       } catch (err) {
         console.warn('Sync failed, kept in pending queue:', err);
         visitRecord.syncStatus = 'pendiente';
