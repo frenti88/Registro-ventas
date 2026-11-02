@@ -1587,52 +1587,50 @@
             </div>
           </div>
 
-          <!-- Firebase Firestore Native Connection (Dual Persistence) -->
+          <!-- Supabase PostgreSQL Native Connection (Dual Persistence with Google Sheets) -->
           <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
             <div class="flex items-center space-x-2">
-              <span class="text-lg">🔥</span>
+              <span class="text-lg">⚡</span>
               <div>
-                <h4 class="text-sm font-bold text-black">Persistencia dual: Firebase Firestore</h4>
-                <p class="text-xs text-gray-500">Conexión nativa con fallback instantáneo a LocalStorage (&lt;1.5s)</p>
+                <h4 class="text-sm font-bold text-black">Persistencia dual: Base de Datos Supabase</h4>
+                <p class="text-xs text-gray-500">Sincronización simultánea en PostgreSQL (Supabase) + Google Sheets + LocalStorage</p>
               </div>
             </div>
 
             <!-- Status indicator -->
-            <div class="p-2.5 rounded-xl border flex items-center justify-between text-xs" :class="firestoreEnabled && firestoreConfig.projectId ? 'bg-green-50 border-green-200 text-green-900' : 'bg-gray-50 border-gray-200 text-gray-700'">
+            <div class="p-2.5 rounded-xl border flex items-center justify-between text-xs" :class="supabaseEnabled && supabaseConfig.url ? 'bg-green-50 border-green-200 text-green-900' : 'bg-gray-50 border-gray-200 text-gray-700'">
               <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full" :class="firestoreEnabled && firestoreConfig.projectId ? 'bg-[#05944F]' : 'bg-blue-500'"></span>
+                <span class="w-2.5 h-2.5 rounded-full" :class="supabaseEnabled && supabaseConfig.url ? 'bg-[#05944F]' : 'bg-blue-500'"></span>
                 <span class="font-bold">
-                  {{ firestoreEnabled && firestoreConfig.projectId ? 'Firestore conectado (persistencia dual)' : 'Almacenamiento local activo' }}
+                  {{ supabaseEnabled && supabaseConfig.url ? 'Supabase PostgreSQL conectado (persistencia dual activa)' : 'Almacenamiento local activo' }}
                 </span>
               </div>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white border border-gray-200">
-                {{ firestoreEnabled && firestoreConfig.projectId ? 'Firestore' : 'LocalStorage' }}
+                {{ supabaseEnabled && supabaseConfig.url ? 'Supabase + Excel' : 'LocalStorage' }}
               </span>
             </div>
 
             <div class="space-y-2 text-xs">
               <div>
-                <label class="block font-bold text-gray-500 mb-0.5">Project ID:</label>
-                <input type="text" v-model="firestoreConfig.projectId" placeholder="mi-proyecto-firebase" class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
+                <label class="block font-bold text-gray-500 mb-0.5">Supabase Project URL:</label>
+                <input type="text" v-model="supabaseConfig.url" placeholder="https://xxxx.supabase.co" class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block font-bold text-gray-500 mb-0.5">API Key:</label>
-                  <input type="text" v-model="firestoreConfig.apiKey" placeholder="AIzaSy..." class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
-                </div>
-                <div>
-                  <label class="block font-bold text-gray-500 mb-0.5">Auth Domain:</label>
-                  <input type="text" v-model="firestoreConfig.authDomain" placeholder="app.firebaseapp.com" class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
-                </div>
+              <div>
+                <label class="block font-bold text-gray-500 mb-0.5">Supabase Anon / Public Key:</label>
+                <input type="password" v-model="supabaseConfig.anonKey" placeholder="eyJhbGciOi..." class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs">
               </div>
             </div>
 
+            <div v-if="supabaseStatusMessage" class="p-2.5 rounded-xl text-xs font-medium bg-green-50 text-green-800 border border-green-200">
+              {{ supabaseStatusMessage }}
+            </div>
+
             <div class="flex space-x-2 pt-1">
-              <button @click="saveFirestoreConfig" class="flex-1 h-10 rounded-xl bg-black text-white text-xs font-bold active-scale">
-                Guardar configuración de Firebase
+              <button @click="syncAllToSupabase" :disabled="isSyncingSupabase" class="flex-1 h-10 rounded-xl bg-black text-white text-xs font-bold active-scale disabled:bg-gray-300">
+                {{ isSyncingSupabase ? 'Sincronizando BD...' : 'Sincronizar todo en Supabase' }}
               </button>
-              <button @click="testFirestoreConnection" class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale">
-                Verificar
+              <button @click="testSupabaseConnection" :disabled="isSyncingSupabase" class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale">
+                Verificar BD
               </button>
             </div>
           </div>
@@ -2868,7 +2866,18 @@ createApp({
     const OLD_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzuCcKOBSEW1bV6dcLeuhzHXzgj-YeE7N6wdxAwKcP5FjmGSsCHuBs8LgszCpf7i-xk/exec';
     const webhookUrl = ref(OFFICIAL_WEBHOOK_URL);
 
-    // Firestore Dual Persistence state
+    // Supabase PostgreSQL Dual Persistence state (conectado en paralelo a Google Sheets)
+    const OFFICIAL_SUPABASE_URL = 'https://mmoysvzksbglxqahkoxo.supabase.co';
+    const OFFICIAL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tb3lzdnprc2JnbHhxYWhrb3hvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NDQ4NjgsImV4cCI6MjA3MTEyMDg2OH0.rYjgP-uryt1hepVV4JRO50AC0V9uMkFHXEihHiyg1Y0';
+    const supabaseConfig = ref({
+      url: OFFICIAL_SUPABASE_URL,
+      anonKey: OFFICIAL_SUPABASE_ANON_KEY
+    });
+    const supabaseEnabled = ref(true);
+    const isSyncingSupabase = ref(false);
+    const supabaseStatusMessage = ref('');
+
+    // Legacy Firestore compatibility state
     const firestoreConfig = ref({
       projectId: '',
       apiKey: '',
@@ -2888,7 +2897,7 @@ createApp({
     const currentInspirationalMessage = ref('');
 
     // Sequence counter for RV-0001
-    const lastRegSeq = ref(86);
+    const lastRegSeq = ref(227);
 
     const parseSeqFromId = (idStr) => {
       if (!idStr) return 0;
@@ -2897,8 +2906,8 @@ createApp({
     };
 
     const getNextRegistroId = () => {
-      if (lastRegSeq.value < 86) {
-        lastRegSeq.value = 86;
+      if (lastRegSeq.value < 227) {
+        lastRegSeq.value = 227;
       }
       lastRegSeq.value += 1;
       localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
@@ -3014,8 +3023,8 @@ createApp({
         const storedVisitas = localStorage.getItem('rm_visitas');
         visitas.value = storedVisitas ? JSON.parse(storedVisitas) : [];
 
-        // Calculate maximum sequence number for RV-XXXX pattern (mínimo 86 para evitar colisiones con ventas existentes)
-        let maxSeq = Math.max(parseInt(localStorage.getItem('rm_last_reg_seq') || '86', 10), 86);
+        // Calculate maximum sequence number for RV-XXXX pattern (mínimo 227 para evitar colisiones con ventas existentes)
+        let maxSeq = Math.max(parseInt(localStorage.getItem('rm_last_reg_seq') || '227', 10), 227);
         visitas.value.forEach(v => {
           const vSeq = parseSeqFromId(v.id);
           if (vSeq > maxSeq) maxSeq = vSeq;
@@ -3052,6 +3061,15 @@ createApp({
           webhookUrl.value = storedWebhook;
         }
 
+        const storedSupabase = localStorage.getItem('rm_supabase_config');
+        if (storedSupabase) {
+          const parsedSb = JSON.parse(storedSupabase);
+          if (parsedSb && parsedSb.url && parsedSb.anonKey) {
+            supabaseConfig.value = parsedSb;
+          }
+        }
+        supabaseEnabled.value = !!(supabaseConfig.value.url && supabaseConfig.value.anonKey);
+
         const storedFirestore = localStorage.getItem('rm_firestore_config');
         if (storedFirestore) {
           firestoreConfig.value = JSON.parse(storedFirestore);
@@ -3084,11 +3102,234 @@ createApp({
       localStorage.setItem('rm_recent_visits', JSON.stringify(recentVisitsByUser.value));
       localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
       localStorage.setItem('rm_webhook_url', webhookUrl.value);
+      localStorage.setItem('rm_supabase_config', JSON.stringify(supabaseConfig.value));
       localStorage.setItem('rm_firestore_config', JSON.stringify(firestoreConfig.value));
       if (currentUser.value) {
         localStorage.setItem('rm_current_user', JSON.stringify(currentUser.value));
       } else {
         localStorage.removeItem('rm_current_user');
+      }
+    };
+
+    // -------------------------------------------------------------------
+    // SUPABASE POSTGRESQL DUAL PERSISTENCE HELPERS
+    // -------------------------------------------------------------------
+    const getSupabaseHeaders = (prefer = 'resolution=merge-duplicates,return=minimal') => ({
+      apikey: supabaseConfig.value.anonKey,
+      Authorization: `Bearer ${supabaseConfig.value.anonKey}`,
+      'Content-Type': 'application/json',
+      Prefer: prefer
+    });
+
+    /**
+     * Guarda o actualiza una visita y sus ítems detallados directamente en Supabase PostgreSQL.
+     */
+    const syncVisitToSupabase = async (visitRecord) => {
+      if (!supabaseEnabled.value || !supabaseConfig.value.url || !supabaseConfig.value.anonKey) return false;
+      const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+
+      const visitRow = {
+        id: visitRecord.id,
+        fecha_utc: visitRecord.fechaUtc || new Date().toISOString(),
+        fecha_bogota: visitRecord.fechaBogota || '',
+        hora_bogota: visitRecord.horaBogota || '',
+        usuario_email: visitRecord.usuarioEmail || '',
+        usuario_nombre: visitRecord.usuarioNombre || '',
+        comercio_id: visitRecord.comercioId || '',
+        comercio_nombre: visitRecord.comercioNombre || '',
+        total_unidades: Number(visitRecord.totalUnidades || 0),
+        total_venta: Number(visitRecord.totalVenta || 0),
+        total_efectivo: Number(visitRecord.totalEfectivo || 0),
+        total_transferencia: Number(visitRecord.totalTransferencia || 0),
+        total_tarjeta: Number(visitRecord.totalTarjeta || 0),
+        items: Array.isArray(visitRecord.items) ? visitRecord.items : [],
+        sync_status: 'sincronizado',
+        updated_at: new Date().toISOString()
+      };
+
+      const itemRows = (Array.isArray(visitRecord.items) ? visitRecord.items : []).map((it, idx) => ({
+        registro_id: it.registroId || `${visitRecord.id}-${idx + 1}`,
+        visita_id: visitRecord.id,
+        fecha: visitRecord.fechaBogota || '',
+        hora: visitRecord.horaBogota || '',
+        vendedor: visitRecord.usuarioNombre || visitRecord.usuarioEmail || 'Vendedor',
+        correo_vendedor: visitRecord.usuarioEmail || '',
+        emprendimiento: visitRecord.comercioNombre || '',
+        producto: it.producto || '',
+        unidades: Number(it.unidades || 1),
+        precio_unitario: Number(it.precioUnitario || 0),
+        valor_total: Number(it.subtotal || (Number(it.unidades || 1) * Number(it.precioUnitario || 0))),
+        metodo_pago: it.metodoPago || 'Efectivo'
+      }));
+
+      const resVisit = await fetch(`${baseUrl}/rest/v1/visitas_ventas?on_conflict=id`, {
+        method: 'POST',
+        headers: getSupabaseHeaders(),
+        body: JSON.stringify([visitRow])
+      });
+      if (!resVisit.ok) {
+        throw new Error(`Supabase visitas_ventas error: ${resVisit.status}`);
+      }
+
+      if (itemRows.length > 0) {
+        const resItems = await fetch(`${baseUrl}/rest/v1/registros_ventas?on_conflict=registro_id`, {
+          method: 'POST',
+          headers: getSupabaseHeaders(),
+          body: JSON.stringify(itemRows)
+        });
+        if (!resItems.ok) {
+          throw new Error(`Supabase registros_ventas error: ${resItems.status}`);
+        }
+      }
+      return true;
+    };
+
+    const deleteVisitFromSupabase = async (visitaId) => {
+      if (!supabaseEnabled.value || !supabaseConfig.value.url || !supabaseConfig.value.anonKey) return;
+      const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+      try {
+        await Promise.all([
+          fetch(`${baseUrl}/rest/v1/registros_ventas?visita_id=eq.${encodeURIComponent(visitaId)}`, {
+            method: 'DELETE',
+            headers: getSupabaseHeaders('return=minimal')
+          }),
+          fetch(`${baseUrl}/rest/v1/visitas_ventas?id=eq.${encodeURIComponent(visitaId)}`, {
+            method: 'DELETE',
+            headers: getSupabaseHeaders('return=minimal')
+          })
+        ]);
+      } catch (err) {
+        console.warn('Error eliminando registro en Supabase:', err);
+      }
+    };
+
+    /**
+     * Descarga el historial de ventas desde Supabase para mantener sincronizados todos los dispositivos.
+     */
+    const syncSalesFromSupabase = async () => {
+      if (!isOnline.value || !supabaseEnabled.value || !supabaseConfig.value.url) return;
+      const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+      try {
+        const res = await fetch(`${baseUrl}/rest/v1/visitas_ventas?select=*&order=id.desc&limit=500`, {
+          headers: {
+            apikey: supabaseConfig.value.anonKey,
+            Authorization: `Bearer ${supabaseConfig.value.anonKey}`
+          }
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        const existingMap = new Map();
+        visitas.value.forEach(v => existingMap.set(v.id, v));
+        let addedOrUpdated = false;
+        let highestSeq = lastRegSeq.value;
+
+        rows.forEach(r => {
+          const seq = parseSeqFromId(r.id);
+          if (seq > highestSeq) highestSeq = seq;
+          if (Array.isArray(r.items)) {
+            r.items.forEach(it => {
+              const itSeq = parseSeqFromId(it.registroId);
+              if (itSeq > highestSeq) highestSeq = itSeq;
+            });
+          }
+
+          if (!existingMap.has(r.id)) {
+            visitas.value.push({
+              id: r.id,
+              fechaUtc: r.fecha_utc || new Date().toISOString(),
+              fechaBogota: r.fecha_bogota || '',
+              horaBogota: r.hora_bogota || '',
+              usuarioEmail: r.usuario_email || '',
+              usuarioNombre: r.usuario_nombre || '',
+              comercioId: r.comercio_id || '',
+              comercioNombre: r.comercio_nombre || '',
+              totalUnidades: Number(r.total_unidades || 0),
+              totalVenta: Number(r.total_venta || 0),
+              totalEfectivo: Number(r.total_efectivo || 0),
+              totalTransferencia: Number(r.total_transferencia || 0),
+              totalTarjeta: Number(r.total_tarjeta || 0),
+              items: Array.isArray(r.items) ? r.items : [],
+              syncStatus: 'sincronizado'
+            });
+            addedOrUpdated = true;
+          }
+        });
+
+        if (highestSeq > lastRegSeq.value) {
+          lastRegSeq.value = highestSeq;
+          localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
+        }
+
+        if (addedOrUpdated) {
+          visitas.value.sort((a, b) => parseSeqFromId(b.id) - parseSeqFromId(a.id));
+          saveState();
+        }
+      } catch (err) {
+        console.warn('Error cargando ventas desde Supabase:', err);
+      }
+    };
+
+    /**
+     * Sincroniza el catálogo de comercios, productos y matriz de asignación hacia Supabase.
+     */
+    const syncCatalogToSupabase = async () => {
+      if (!isOnline.value || !supabaseEnabled.value || !supabaseConfig.value.url) return;
+      const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+      try {
+        const comerciosPayload = comercios.value.map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          activo: c.activo !== false,
+          updated_at: new Date().toISOString()
+        }));
+
+        const prodToCom = {};
+        Object.keys(comercioProductsMap.value).forEach(cId => {
+          const cObj = comercios.value.find(c => c.id === cId);
+          (comercioProductsMap.value[cId] || []).forEach(pId => {
+            prodToCom[pId] = { id: cId, nombre: cObj ? cObj.nombre : '' };
+          });
+        });
+
+        const productosPayload = productos.value.map(p => ({
+          id: p.id,
+          codigo: p.codigo || '',
+          nombre: p.nombre,
+          comercio_id: prodToCom[p.id] ? prodToCom[p.id].id : null,
+          comercio_nombre: prodToCom[p.id] ? prodToCom[p.id].nombre : null,
+          precio: Number(p.precio || 0),
+          activo: p.activo !== false,
+          updated_at: new Date().toISOString()
+        }));
+
+        const bridgePayload = [];
+        Object.keys(comercioProductsMap.value).forEach(cId => {
+          (comercioProductsMap.value[cId] || []).forEach(pId => {
+            bridgePayload.push({ comercio_id: cId, producto_id: pId });
+          });
+        });
+
+        await fetch(`${baseUrl}/rest/v1/comercios?on_conflict=id`, {
+          method: 'POST',
+          headers: getSupabaseHeaders(),
+          body: JSON.stringify(comerciosPayload)
+        });
+        await fetch(`${baseUrl}/rest/v1/productos?on_conflict=id`, {
+          method: 'POST',
+          headers: getSupabaseHeaders(),
+          body: JSON.stringify(productosPayload)
+        });
+        if (bridgePayload.length > 0) {
+          await fetch(`${baseUrl}/rest/v1/comercio_productos?on_conflict=comercio_id,producto_id`, {
+            method: 'POST',
+            headers: getSupabaseHeaders(),
+            body: JSON.stringify(bridgePayload)
+          });
+        }
+      } catch (err) {
+        console.warn('Error sincronizando catálogo con Supabase:', err);
       }
     };
 
@@ -3174,11 +3415,38 @@ createApp({
     };
 
     /**
-     * Consulta directamente la hoja pública de Google Sheets para conocer en vivo
+     * Consulta directamente tanto Supabase como la hoja pública de Google Sheets para conocer en vivo
      * el último número consecutivo utilizado y evitar colisiones entre distintos celulares.
      */
     const syncCloudMaxSequence = async () => {
       try {
+        let highest = Math.max(lastRegSeq.value, 227);
+
+        // 1. Consultar consecutivo más alto en Supabase PostgreSQL
+        if (supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) {
+          try {
+            const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+            const sbRes = await fetch(`${baseUrl}/rest/v1/registros_ventas?select=registro_id`, {
+              headers: {
+                apikey: supabaseConfig.value.anonKey,
+                Authorization: `Bearer ${supabaseConfig.value.anonKey}`
+              }
+            });
+            if (sbRes.ok) {
+              const sbRows = await sbRes.json();
+              if (Array.isArray(sbRows)) {
+                sbRows.forEach(r => {
+                  const num = parseSeqFromId(r.registro_id);
+                  if (num > highest) highest = num;
+                });
+              }
+            }
+          } catch (sbErr) {
+            console.warn('Fallback Supabase sequence check:', sbErr);
+          }
+        }
+
+        // 2. Consultar consecutivo más alto en Google Sheets
         const sheetId = '1OpLd2z41cIuQptUCDV7QkVV7vO6SGGNka7JB1KRUOZU';
         const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Todas%20las%20ventas&tq=${encodeURIComponent('select A')}`;
         const res = await fetch(gvizUrl);
@@ -3186,16 +3454,16 @@ createApp({
           const csv = await res.text();
           const matches = csv.match(/RV-(\d+)/gi);
           if (matches) {
-            let highest = Math.max(lastRegSeq.value, 86);
             matches.forEach(m => {
               const num = parseInt(m.replace(/RV-/i, ''), 10);
               if (num > highest) highest = num;
             });
-            if (highest > lastRegSeq.value) {
-              lastRegSeq.value = highest;
-              localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
-            }
           }
+        }
+
+        if (highest > lastRegSeq.value) {
+          lastRegSeq.value = highest;
+          localStorage.setItem('rm_last_reg_seq', String(lastRegSeq.value));
         }
       } catch (err) {
         console.warn('Fallback sequence check:', err);
@@ -3203,7 +3471,7 @@ createApp({
     };
 
     /**
-     * Sincroniza tanto el contador consecutivo (RV-XXXX) como el catálogo desde Google Sheets.
+     * Sincroniza tanto el contador consecutivo (RV-XXXX) como el catálogo desde Google Sheets y Supabase.
      */
     const syncCloudCatalog = async (forceNotify = false) => {
       if (!isOnline.value) {
@@ -3212,10 +3480,13 @@ createApp({
       }
       isSyncingCatalog.value = true;
       try {
-        // 1. Sincronizar consecutivo más reciente directamente desde Google Sheets
+        // 1. Sincronizar consecutivo más reciente desde Supabase y Google Sheets
         await syncCloudMaxSequence();
 
-        // 2. Sincronizar catálogo vía Webhook si está disponible
+        // 2. Sincronizar ventas desde Supabase para mantener el historial unificado
+        await syncSalesFromSupabase();
+
+        // 3. Sincronizar catálogo vía Webhook si está disponible
         if (webhookUrl.value) {
           const res = await fetch(webhookUrl.value);
           if (res.ok) {
@@ -3241,7 +3512,7 @@ createApp({
             }
           }
         } else if (forceNotify) {
-          showToast('Consecutivo verificado con éxito', 'success');
+          showToast('Consecutivo y base de datos verificados con éxito', 'success');
         }
       } catch (err) {
         console.warn('Error sincronizando con webhook:', err);
@@ -3257,6 +3528,7 @@ createApp({
       loadFromLocalStorage();
       initSeenVisitsForUser();
       syncCloudMaxSequence().then(() => {
+        syncSalesFromSupabase();
         syncCloudCatalog();
       });
 
@@ -3265,6 +3537,7 @@ createApp({
         isOnline.value = true;
         syncCloudMaxSequence().then(() => {
           syncPendingQueue();
+          syncSalesFromSupabase();
           syncCloudCatalog();
         });
       });
@@ -3627,10 +3900,10 @@ createApp({
       const isoUtc = now.toISOString();
       const { fecha, hora } = getBogotaDateTime(isoUtc);
 
-      // Asegurar que el contador secuencial tenga como piso mínimo 86 para no colisionar con ventas previas
-      if (lastRegSeq.value < 86) {
-        lastRegSeq.value = 86;
-        localStorage.setItem('rm_last_reg_seq', '86');
+      // Asegurar que el contador secuencial tenga como piso mínimo 227 para no colisionar con ventas previas
+      if (lastRegSeq.value < 227) {
+        lastRegSeq.value = 227;
+        localStorage.setItem('rm_last_reg_seq', '227');
       }
 
       // Flattened sold items with sequential RV-XXXX sequence (e.g. RV-0001, RV-0002)
@@ -3677,7 +3950,7 @@ createApp({
       recents.unshift(activeComercio.value.id);
       if (recents.length > 3) recents.length = 3;
 
-      // 3. Add to pending queue for webhook sync
+      // 3. Add to pending queue for webhook & Supabase sync
       pendingQueue.value.push(newVisit);
       saveState();
 
@@ -3688,8 +3961,8 @@ createApp({
       const randomIdx = Math.floor(Math.random() * INSPIRATIONAL_QUOTES.length);
       currentInspirationalMessage.value = INSPIRATIONAL_QUOTES[randomIdx];
 
-      // 5. Attempt background sync if online & webhook configured
-      if (isOnline.value && webhookUrl.value) {
+      // 5. Attempt background sync if online (Google Sheets + Supabase PostgreSQL)
+      if (isOnline.value) {
         attemptSyncVisit(newVisit);
       }
 
@@ -3698,7 +3971,7 @@ createApp({
     };
 
     const attemptSyncVisit = async (visitRecord) => {
-      if (!webhookUrl.value) return;
+      if (!webhookUrl.value && !supabaseEnabled.value) return;
 
       // Garantía anti-colisión: si el registro tiene un ID menor o igual a 86 (que ya existe en la hoja),
       // le reasignamos automáticamente el siguiente consecutivo libre para que Google Sheets lo acepte de inmediato
@@ -3727,14 +4000,27 @@ createApp({
       };
 
       try {
-        const response = await fetch(webhookUrl.value, {
-          method: 'POST',
-          mode: 'no-cors', // standard for Google Apps Script redirects
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
+        const tasks = [];
+        if (webhookUrl.value) {
+          tasks.push(
+            fetch(webhookUrl.value, {
+              method: 'POST',
+              mode: 'no-cors', // standard for Google Apps Script redirects
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            })
+          );
+        }
+        if (supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) {
+          tasks.push(syncVisitToSupabase(visitRecord));
+        }
 
-        // With no-cors, fetch completes successfully if endpoint accepted it
+        const results = await Promise.allSettled(tasks);
+        const anySuccess = results.some(r => r.status === 'fulfilled');
+        if (!anySuccess) {
+          throw new Error('Ambos destinos fallaron al sincronizar');
+        }
+
         visitRecord.syncStatus = 'sincronizado';
         if (lastConfirmedVisit.value && lastConfirmedVisit.value.id === visitRecord.id) {
           lastConfirmedVisit.value.syncStatus = 'sincronizado';
@@ -3751,7 +4037,7 @@ createApp({
     };
 
     const syncPendingQueue = async () => {
-      if (!isOnline.value || pendingQueue.value.length === 0 || !webhookUrl.value) return;
+      if (!isOnline.value || pendingQueue.value.length === 0) return;
       isSyncing.value = true;
 
       const remaining = [...pendingQueue.value];
@@ -3895,8 +4181,8 @@ createApp({
       editingVisit.value = null;
       showToast('Cambios guardados con éxito', 'success');
 
-      // Re-trigger sync
-      if (isOnline.value && webhookUrl.value) {
+      // Re-trigger sync (Google Sheets + Supabase PostgreSQL)
+      if (isOnline.value) {
         syncPendingQueue();
       }
     };
@@ -3909,12 +4195,15 @@ createApp({
       const qIdx = pendingQueue.value.findIndex(q => q.id === visitaId);
       const removedQueue = qIdx !== -1 ? pendingQueue.value[qIdx] : null;
 
-      // Optimistically remove
+      // Optimistically remove locally and in Supabase
       visitas.value.splice(idx, 1);
       if (qIdx !== -1) {
         pendingQueue.value.splice(qIdx, 1);
       }
       saveState();
+      if (isOnline.value) {
+        deleteVisitFromSupabase(visitaId);
+      }
 
       // Show reversible toast with Deshacer button for 5 seconds
       showToast(
@@ -3927,6 +4216,9 @@ createApp({
             pendingQueue.value.push(removedQueue);
           }
           saveState();
+          if (isOnline.value) {
+            syncVisitToSupabase(removedVisit);
+          }
           hideToast();
           showToast('Venta restaurada con éxito', 'success');
         },
@@ -4021,22 +4313,31 @@ createApp({
       };
 
       try {
-        await fetch(webhookUrl.value, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
+        const syncTasks = [];
+        if (webhookUrl.value) {
+          syncTasks.push(
+            fetch(webhookUrl.value, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            })
+          );
+        }
+        if (supabaseEnabled.value) {
+          syncTasks.push(syncCatalogToSupabase());
+        }
+        await Promise.allSettled(syncTasks);
 
-        catalogSyncStatus.value = '✓ Catálogo sincronizado en Google Sheets (' + detailedCatalog.length + ' productos en ' + comercios.value.length + ' emprendimientos)';
+        catalogSyncStatus.value = '✓ Catálogo sincronizado en Google Sheets y Supabase (' + detailedCatalog.length + ' productos en ' + comercios.value.length + ' emprendimientos)';
         if (showNotification) {
-          showToast('✓ Catálogo sincronizado con Google Sheets con éxito', 'success');
+          showToast('✓ Catálogo sincronizado en Google Sheets y Supabase', 'success');
         }
       } catch (err) {
-        console.warn('Error sincronizando catálogo con webhook:', err);
-        catalogSyncStatus.value = '⚠️ Error al sincronizar catálogo con Google Sheets: ' + err.toString();
+        console.warn('Error sincronizando catálogo:', err);
+        catalogSyncStatus.value = '⚠️ Error al sincronizar catálogo: ' + err.toString();
         if (showNotification) {
-          showToast('No se pudo conectar con el webhook de Google Sheets', 'error');
+          showToast('No se pudo conectar con la nube para sincronizar catálogo', 'error');
         }
       } finally {
         isSyncingCatalog.value = false;
@@ -4485,6 +4786,60 @@ createApp({
       });
     };
 
+    const testSupabaseConnection = async () => {
+      if (!supabaseConfig.value.url || !supabaseConfig.value.anonKey) {
+        showToast('Ingresa el URL y Anon Key de Supabase', 'error');
+        return;
+      }
+      isSyncingSupabase.value = true;
+      supabaseStatusMessage.value = '';
+      try {
+        supabaseEnabled.value = true;
+        saveState();
+        const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+        const res = await fetch(`${baseUrl}/rest/v1/registros_ventas?select=registro_id`, {
+          headers: {
+            apikey: supabaseConfig.value.anonKey,
+            Authorization: `Bearer ${supabaseConfig.value.anonKey}`
+          }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = await res.json();
+        supabaseStatusMessage.value = `✓ Conexión exitosa con Supabase PostgreSQL (${rows.length} registros de ventas en BD).`;
+        showToast('✓ Conectado exitosamente con la base de datos Supabase', 'success');
+      } catch (err) {
+        supabaseStatusMessage.value = '✕ Error al conectar con Supabase: ' + err.toString();
+        showToast('Error al verificar conexión con Supabase', 'error');
+      } finally {
+        isSyncingSupabase.value = false;
+      }
+    };
+
+    const syncAllToSupabase = async () => {
+      if (!supabaseConfig.value.url || !supabaseConfig.value.anonKey) {
+        showToast('Configura primero el URL y Anon Key de Supabase', 'error');
+        return;
+      }
+      isSyncingSupabase.value = true;
+      supabaseStatusMessage.value = 'Sincronizando catálogo y ventas hacia Supabase...';
+      try {
+        supabaseEnabled.value = true;
+        saveState();
+        await syncCatalogToSupabase();
+        for (const v of visitas.value) {
+          await syncVisitToSupabase(v);
+        }
+        await syncSalesFromSupabase();
+        supabaseStatusMessage.value = `✓ Base de datos Supabase sincronizada (${comercios.value.length} emprendimientos, ${productos.value.length} productos y ${visitas.value.length} ventas).`;
+        showToast('✓ Todos los registros y catálogo sincronizados en Supabase', 'success');
+      } catch (err) {
+        supabaseStatusMessage.value = '✕ Error al sincronizar con Supabase: ' + err.toString();
+        showToast('Error al sincronizar con Supabase', 'error');
+      } finally {
+        isSyncingSupabase.value = false;
+      }
+    };
+
     const saveFirestoreConfig = () => {
       firestoreEnabled.value = !!firestoreConfig.value.projectId;
       saveState();
@@ -4624,6 +4979,12 @@ createApp({
       testWebhookConnection,
       repairGoogleSheets,
       copyAppsScriptCode,
+      supabaseConfig,
+      supabaseEnabled,
+      isSyncingSupabase,
+      supabaseStatusMessage,
+      testSupabaseConnection,
+      syncAllToSupabase,
       firestoreConfig,
       firestoreEnabled,
       saveFirestoreConfig,
