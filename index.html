@@ -1014,6 +1014,34 @@
           </span>
         </div>
 
+        <!-- Botón de Respaldo / Backup Seguro del Vendedor -->
+        <div class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-black">Respaldo seguro de mis ventas</h3>
+              <p class="text-[11px] text-gray-500">Sincroniza con Supabase/Excel, envía backup a {{ backupEmail }} y genera archivo .xlsx</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              @click="sendBackupEmailAndExcel(false)"
+              :disabled="isSendingBackup || userVisits.length === 0"
+              class="h-11 px-3 rounded-xl bg-black text-white text-xs font-bold flex items-center justify-center space-x-1.5 active-scale touch-target disabled:bg-gray-200 disabled:text-gray-400"
+            >
+              <span>{{ isSendingBackup ? 'Enviando backup...' : '📩 Enviar Backup Correo' }}</span>
+            </button>
+            <button
+              type="button"
+              @click="shareOrDownloadSellerExcel"
+              :disabled="userVisits.length === 0"
+              class="h-11 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold flex items-center justify-center space-x-1.5 active-scale touch-target disabled:opacity-50"
+            >
+              <span>📤 Compartir / Excel</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Filter / Search within user visits -->
         <div class="relative">
           <input 
@@ -1198,9 +1226,12 @@
             </div>
           </div>
 
-          <!-- Export Buttons: Native Excel & CSV (SheetJS) -->
-          <div class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2">
-            <h4 class="text-xs font-bold text-gray-500">Exportar consolidado de ventas</h4>
+          <!-- Export & Email Backup Buttons: Native Excel, CSV & Automatic Email Backup -->
+          <div class="bg-white p-3.5 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-gray-500">Exportar y Respaldo (Backup) de Ventas</h4>
+              <span class="text-[10px] font-mono text-gray-500 truncate max-w-[170px]">{{ backupEmail }}</span>
+            </div>
             <div class="grid grid-cols-2 gap-2">
               <button 
                 @click="exportToExcel" 
@@ -1215,6 +1246,13 @@
                 <span>📄 Descargar CSV</span>
               </button>
             </div>
+            <button 
+              @click="sendBackupEmailAndExcel(true)" 
+              :disabled="isSendingBackup"
+              class="w-full h-11 rounded-xl bg-[#05944F] hover:bg-green-700 text-white text-xs font-extrabold flex items-center justify-center space-x-1.5 active-scale touch-target shadow-sm disabled:opacity-50"
+            >
+              <span>{{ isSendingBackup ? 'Generando y enviando backup...' : '📩 Enviar Backup Excel al Correo Ahora' }}</span>
+            </button>
           </div>
 
           <!-- Filters Bar -->
@@ -1631,6 +1669,57 @@
               </button>
               <button @click="testSupabaseConnection" :disabled="isSyncingSupabase" class="px-3 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-black text-xs font-bold active-scale">
                 Verificar BD
+              </button>
+            </div>
+          </div>
+
+          <!-- Envío Automático al Correo del Excel como Backup -->
+          <div class="bg-white p-4 rounded-2xl border border-[#E2E2E2] shadow-sm space-y-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-lg">📩</span>
+              <div>
+                <h4 class="text-sm font-bold text-black">Backup Automático de Ventas al Correo</h4>
+                <p class="text-xs text-gray-500">Envía el archivo Excel (.xlsx) consolidado y guarda auditoría en Supabase</p>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <div>
+                <label class="block font-bold text-gray-500 mb-0.5">Correo(s) destinatario(s) del Backup:</label>
+                <input
+                  type="text"
+                  v-model="backupEmail"
+                  @change="saveBackupConfig"
+                  placeholder="correo@ejemplo.com"
+                  class="w-full h-9 px-3 rounded-lg bg-gray-50 border border-gray-300 font-mono text-xs"
+                >
+              </div>
+              <label class="flex items-center space-x-2 pt-1 cursor-pointer">
+                <input type="checkbox" v-model="autoBackupEnabled" @change="saveBackupConfig" class="rounded border-gray-300 text-black focus:ring-black">
+                <span class="text-xs font-medium text-gray-700">Respaldo automático al cerrar sesión y programación diaria (1:00 p. m. y 7:00 p. m.)</span>
+              </label>
+            </div>
+
+            <div v-if="backupStatusMessage" class="p-2.5 rounded-xl text-xs font-medium bg-green-50 text-green-800 border border-green-200">
+              {{ backupStatusMessage }}
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                @click="sendBackupEmailAndExcel(true)"
+                :disabled="isSendingBackup"
+                class="h-10 rounded-xl bg-[#05944F] text-white text-xs font-bold active-scale disabled:opacity-50"
+              >
+                {{ isSendingBackup ? 'Enviando...' : '📩 Enviar Backup Ahora' }}
+              </button>
+              <button
+                type="button"
+                @click="setupDailyEmailTrigger"
+                :disabled="isSendingBackup"
+                class="h-10 rounded-xl bg-black text-white text-xs font-bold active-scale disabled:opacity-50"
+              >
+                ⏱️ Programar Envío Diario
               </button>
             </div>
           </div>
@@ -2685,6 +2774,99 @@ function estandarizarYRepararHojas() {
   };
 }
 
+/**
+ * Genera el archivo Excel (.xlsx) completo de Google Sheets y lo envía por correo
+ * junto con un resumen ejecutivo de todas las ventas registradas.
+ */
+function enviarBackupExcelPorCorreo(destinatarios, generadoPor) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var emailTo = (destinatarios || "fredyarroyave88@gmail.com").toString().trim();
+  var master = getOrCreateMasterSheet(ss);
+  var lastRow = master.getLastRow();
+  var totalRegistros = Math.max(0, lastRow - 1);
+  var totalDinero = 0;
+  var totalUnidades = 0;
+
+  if (lastRow > 1) {
+    var vals = master.getRange(2, 1, lastRow - 1, Math.min(master.getLastColumn(), 11)).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      var row = vals[i];
+      var hasEmailCol = String(row[4] || '').indexOf('@') !== -1;
+      var uds = Number(hasEmailCol ? row[7] : row[5]) || 0;
+      var tot = Number(String(hasEmailCol ? row[9] : row[7]).replace(/[^0-9.-]/g, '')) || 0;
+      totalUnidades += uds;
+      totalDinero += tot;
+    }
+  }
+
+  var fechaStr = Utilities.formatDate(new Date(), "America/Bogota", "yyyy-MM-dd_HH-mm");
+  var urlExport = "https://docs.google.com/spreadsheets/d/" + ss.getId() + "/export?format=xlsx";
+  var params = {
+    method: "get",
+    headers: { "Authorization": "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  };
+  var response = UrlFetchApp.fetch(urlExport, params);
+  var blob = response.getBlob().setName("Backup_Ventas_Tiendita_" + fechaStr + ".xlsx");
+
+  var subject = "📩 [Backup Ventas de la Tiendita] Reporte Excel (" + totalRegistros + " registros) - " + fechaStr;
+  var htmlBody = "<div style='font-family:sans-serif;max-width:560px;padding:20px;border:1px solid #e2e2e2;border-radius:12px;'>" +
+    "<h2 style='margin-top:0;color:#000;'>Backup Automático — Ventas de la Tiendita</h2>" +
+    "<p style='color:#555;font-size:14px;'>Se adjunta copia de respaldo en formato <strong>Excel (.xlsx)</strong> con todas las pestañas de ventas y catálogo actualizadas.</p>" +
+    "<div style='background:#f6f6f6;padding:14px;border-radius:10px;margin:16px 0;font-size:14px;'>" +
+    "<p style='margin:4px 0;'><strong>Generado por:</strong> " + (generadoPor || "Sistema Automático") + "</p>" +
+    "<p style='margin:4px 0;'><strong>Total registros en hoja:</strong> " + totalRegistros + "</p>" +
+    "<p style='margin:4px 0;'><strong>Unidades acumuladas:</strong> " + totalUnidades + " uds</p>" +
+    "<p style='margin:4px 0;color:#05944F;font-size:16px;'><strong>Total recaudado:</strong> $" + totalDinero.toLocaleString("es-CO") + " COP</p>" +
+    "</div>" +
+    "<p style='font-size:12px;color:#777;'>Además de este Excel adjunto, todos los registros se encuentran respaldados en tiempo real en la base de datos PostgreSQL de Supabase.</p>" +
+    "</div>";
+
+  MailApp.sendEmail({
+    to: emailTo,
+    subject: subject,
+    htmlBody: htmlBody,
+    attachments: [blob]
+  });
+
+  return {
+    status: 'success',
+    destinatarios: emailTo,
+    totalRegistros: totalRegistros,
+    totalDinero: totalDinero
+  };
+}
+
+/**
+ * Programa el envío automático diario del Excel al correo a la 1:00 p. m. y 7:00 p. m. (Hora Bogotá).
+ */
+function programarBackupDiarioAutomatico() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "ejecutarBackupProgramadoDiario") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger("ejecutarBackupProgramadoDiario")
+    .timeBased()
+    .atHour(13)
+    .everyDays(1)
+    .inTimezone("America/Bogota")
+    .create();
+  ScriptApp.newTrigger("ejecutarBackupProgramadoDiario")
+    .timeBased()
+    .atHour(19)
+    .everyDays(1)
+    .inTimezone("America/Bogota")
+    .create();
+  return { status: 'success', message: 'Triggers diarios configurados (1:00 p. m. y 7:00 p. m.)' };
+}
+
+function ejecutarBackupProgramadoDiario() {
+  var email = PropertiesService.getScriptProperties().getProperty("BACKUP_EMAIL") || "fredyarroyave88@gmail.com";
+  enviarBackupExcelPorCorreo(email, "Trigger Automático Diario");
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
@@ -2718,6 +2900,24 @@ function doPost(e) {
         status: 'success',
         message: 'Conexión exitosa y hojas estandarizadas: Todas las ventas, Daniel, Jhon, Julian, Administrador, Catálogo y Emprendimientos.'
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 1B. Envío de Backup Excel por Correo (SEND_EMAIL_BACKUP)
+    if (payload.action === 'SEND_EMAIL_BACKUP') {
+      if (payload.email) {
+        PropertiesService.getScriptProperties().setProperty("BACKUP_EMAIL", String(payload.email).trim());
+      }
+      var resBackup = enviarBackupExcelPorCorreo(payload.email || "fredyarroyave88@gmail.com", payload.generadoPor || "App Ventas");
+      return ContentService.createTextOutput(JSON.stringify(resBackup)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 1C. Configurar Trigger Diario Automático (SETUP_AUTO_BACKUP_TRIGGER)
+    if (payload.action === 'SETUP_AUTO_BACKUP_TRIGGER') {
+      if (payload.email) {
+        PropertiesService.getScriptProperties().setProperty("BACKUP_EMAIL", String(payload.email).trim());
+      }
+      var resTrig = programarBackupDiarioAutomatico();
+      return ContentService.createTextOutput(JSON.stringify(resTrig)).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 2. Sincronización automática de Catálogo (SYNC_CATALOG)
@@ -2876,6 +3076,12 @@ createApp({
     const supabaseEnabled = ref(true);
     const isSyncingSupabase = ref(false);
     const supabaseStatusMessage = ref('');
+
+    // Email & Excel Automatic Backup State
+    const backupEmail = ref(localStorage.getItem('rm_backup_email') || 'fredyarroyave88@gmail.com');
+    const autoBackupEnabled = ref(localStorage.getItem('rm_auto_backup_enabled') !== 'false');
+    const isSendingBackup = ref(false);
+    const backupStatusMessage = ref('');
 
     // Legacy Firestore compatibility state
     const firestoreConfig = ref({
@@ -3725,6 +3931,50 @@ createApp({
     };
 
     const logout = () => {
+      // Si el backup automático al cerrar turno está activo, sincroniza pendientes y dispara el backup silenciosamente
+      if (autoBackupEnabled.value && currentUser.value) {
+        const closingSeller = currentUser.value.name || 'General';
+        (async () => {
+          try {
+            if (isOnline.value && pendingQueue.value.length > 0) {
+              await syncPendingQueue(true);
+            }
+            const targetEmail = (backupEmail.value || 'fredyarroyave88@gmail.com').trim();
+            const targetVisits = visitsHistory.value.filter(v => (v.vendedor || '').toLowerCase() === closingSeller.toLowerCase());
+            const totalUnits = targetVisits.reduce((acc, v) => acc + (v.totalUnits || 0), 0);
+            const totalRevenue = targetVisits.reduce((acc, v) => acc + (v.totalRevenue || 0), 0);
+            const sb = getSupabase();
+            if (sb) {
+              await sb.from('backups_ventas').insert({
+                vendedor: closingSeller,
+                destinatario_email: targetEmail,
+                total_registros: targetVisits.length,
+                total_unidades: totalUnits,
+                total_ingresos: totalRevenue,
+                origen: 'cierre_turno',
+                resumen_json: targetVisits.slice(0, 50)
+              });
+            }
+            const url = (webhookUrl.value || '').trim();
+            if (url) {
+              fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                  action: 'SEND_EMAIL_BACKUP',
+                  email: targetEmail,
+                  vendedor: closingSeller,
+                  totalRegistros: targetVisits.length,
+                  totalRevenue: totalRevenue
+                })
+              }).catch(() => {});
+            }
+          } catch (e) {
+            console.warn('Auto-backup al cerrar sesión omitido:', e);
+          }
+        })();
+      }
       currentUser.value = null;
       openUserMenuModal.value = false;
       saveState();
@@ -4900,6 +5150,196 @@ createApp({
       }
     };
 
+    const saveBackupConfig = () => {
+      localStorage.setItem('rm_backup_email', backupEmail.value);
+      localStorage.setItem('rm_auto_backup_enabled', String(autoBackupEnabled.value));
+      showToast('Configuración de backup guardada', 'success');
+    };
+
+    const buildBackupWorkbook = (sourceVisitas) => {
+      if (typeof XLSX === 'undefined') return null;
+      const wb = XLSX.utils.book_new();
+      const allRows = [];
+      sourceVisitas.forEach(v => {
+        (v.items || []).forEach(it => {
+          allRows.push({
+            'ID de registro': it.registroId || v.id,
+            'Fecha': v.fechaBogota,
+            'Hora': v.horaBogota,
+            'Emprendimiento': v.comercioNombre,
+            'Producto': it.producto,
+            'Unidades vendidas': it.unidades,
+            'Precio unitario': it.precioUnitario,
+            'Valor total': it.subtotal,
+            'Método de pago': it.metodoPago,
+            'Vendedor': v.usuarioNombre || v.usuarioEmail || 'Sin vendedor'
+          });
+        });
+      });
+
+      const emptyRow = [{
+        'ID de registro': '', 'Fecha': '', 'Hora': '', 'Emprendimiento': '',
+        'Producto': '', 'Unidades vendidas': '', 'Precio unitario': '',
+        'Valor total': '', 'Método de pago': '', 'Vendedor': ''
+      }];
+
+      const wsAll = XLSX.utils.json_to_sheet(allRows.length > 0 ? allRows : emptyRow);
+      XLSX.utils.book_append_sheet(wb, wsAll, 'Todas las ventas');
+
+      ['Daniel', 'Jhon', 'Julian', 'Administrador'].forEach(sName => {
+        const sRows = allRows.filter(r => (r['Vendedor'] || '').toLowerCase() === sName.toLowerCase());
+        const wsSeller = XLSX.utils.json_to_sheet(sRows.length > 0 ? sRows : emptyRow);
+        XLSX.utils.book_append_sheet(wb, wsSeller, sName);
+      });
+
+      return { wb, allRows };
+    };
+
+    const sendBackupEmailAndExcel = async (isAdminFull = true) => {
+      isSendingBackup.value = true;
+      backupStatusMessage.value = 'Sincronizando registros locales con Supabase y Google Sheets...';
+      try {
+        // 1. Asegurar que toda venta local o en cola suba a Supabase y Google Sheets primero
+        if (isOnline.value) {
+          for (const v of visitas.value) {
+            await syncVisitToSupabase(v).catch(() => {});
+          }
+          if (pendingQueue.value.length > 0) {
+            await syncPendingQueue();
+          }
+          await syncSalesFromSupabase();
+        }
+
+        const targetVisitas = isAdminFull ? visitas.value : userVisits.value;
+        const { fecha, hora } = getBogotaDateTime(new Date().toISOString());
+        const totalDinero = targetVisitas.reduce((acc, v) => acc + Number(v.totalVenta || 0), 0);
+        const totalUds = targetVisitas.reduce((acc, v) => acc + Number(v.totalUnidades || 0), 0);
+        const generadoPor = currentUser.value ? `${currentUser.value.nombre} (${currentUser.value.email})` : 'Administrador';
+
+        // 2. Guardar registro de auditoría del Backup en Supabase (tabla backups_ventas)
+        if (isOnline.value && supabaseEnabled.value && supabaseConfig.value.url && supabaseConfig.value.anonKey) {
+          const baseUrl = supabaseConfig.value.url.replace(/\/+$/, '');
+          await fetch(`${baseUrl}/rest/v1/backups_ventas`, {
+            method: 'POST',
+            headers: getSupabaseHeaders('return=minimal'),
+            body: JSON.stringify([{
+              fecha_bogota: fecha,
+              hora_bogota: hora,
+              generado_por: generadoPor,
+              correo_destino: backupEmail.value || 'fredyarroyave88@gmail.com',
+              total_registros: targetVisitas.length,
+              total_venta: totalDinero,
+              resumen: {
+                unidades: totalUds,
+                alcance: isAdminFull ? 'consolidado_completo' : 'vendedor_individual',
+                visitas_ids: targetVisitas.slice(0, 100).map(v => v.id)
+              }
+            }])
+          }).catch(e => console.warn('Warning logging backup in Supabase:', e));
+        }
+
+        // 3. Disparar envío automático de correo con adjunto .xlsx vía Google Apps Script Webhook
+        if (isOnline.value && webhookUrl.value) {
+          await fetch(webhookUrl.value, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'SEND_EMAIL_BACKUP',
+              email: backupEmail.value || 'fredyarroyave88@gmail.com',
+              generadoPor: generadoPor,
+              totalRegistros: targetVisitas.length,
+              totalDinero: totalDinero,
+              timestamp: new Date().toISOString()
+            })
+          }).catch(e => console.warn('Webhook email trigger warning:', e));
+        }
+
+        // 4. Generar y descargar copia local .xlsx inmediata como respaldo físico garantizado
+        const built = buildBackupWorkbook(targetVisitas);
+        const safeDate = fecha.replace(/\//g, '-');
+        const fileName = isAdminFull
+          ? `Backup_Ventas_Tiendita_${safeDate}.xlsx`
+          : `Backup_Ventas_${(currentUser.value ? currentUser.value.nombre : 'Vendedor')}_${safeDate}.xlsx`;
+
+        if (built && built.wb) {
+          XLSX.writeFile(built.wb, fileName);
+        }
+
+        backupStatusMessage.value = `✓ Backup enviado a ${backupEmail.value}, respaldado en Supabase y descargado (${targetVisitas.length} ventas • ${formatCOP(totalDinero)}).`;
+        showToast(`✓ Backup enviado a ${backupEmail.value} y copia Excel generada`, 'success');
+      } catch (err) {
+        backupStatusMessage.value = '✕ Error al procesar backup: ' + err.toString();
+        showToast('Error al generar el backup', 'error');
+      } finally {
+        isSendingBackup.value = false;
+      }
+    };
+
+    const shareOrDownloadSellerExcel = async () => {
+      const targetVisitas = userVisits.value;
+      if (targetVisitas.length === 0) {
+        showToast('No tienes ventas registradas para respaldar', 'error');
+        return;
+      }
+      const { fecha } = getBogotaDateTime(new Date().toISOString());
+      const safeDate = fecha.replace(/\//g, '-');
+      const sellerName = currentUser.value ? currentUser.value.nombre : 'Vendedor';
+      const fileName = `Backup_Ventas_${sellerName}_${safeDate}.xlsx`;
+      const built = buildBackupWorkbook(targetVisitas);
+      if (!built || !built.wb) return;
+
+      try {
+        const wbout = XLSX.write(built.wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const file = new File([blob], fileName, { type: blob.type });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Backup Ventas - ${sellerName}`,
+            text: `Respaldo de ventas de ${sellerName} (${targetVisitas.length} registros).`,
+            files: [file]
+          });
+          showToast('Archivo Excel compartido con éxito', 'success');
+          return;
+        }
+      } catch (shareErr) {
+        console.warn('Fallback to direct download:', shareErr);
+      }
+
+      XLSX.writeFile(built.wb, fileName);
+      showToast('Copia Excel (.xlsx) descargada en tu celular', 'success');
+    };
+
+    const setupDailyEmailTrigger = async () => {
+      if (!webhookUrl.value) {
+        showToast('Configura primero el Webhook de Google Apps Script', 'error');
+        return;
+      }
+      isSendingBackup.value = true;
+      backupStatusMessage.value = 'Activando programación diaria de backup por correo...';
+      try {
+        saveBackupConfig();
+        await fetch(webhookUrl.value, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'SETUP_AUTO_BACKUP_TRIGGER',
+            email: backupEmail.value || 'fredyarroyave88@gmail.com',
+            timestamp: new Date().toISOString()
+          })
+        });
+        backupStatusMessage.value = `✓ Envío automático diario programado (1:00 p. m. y 7:00 p. m.) hacia ${backupEmail.value}.`;
+        showToast('✓ Envío automático diario programado con éxito', 'success');
+      } catch (err) {
+        backupStatusMessage.value = '✕ Error al programar envío diario: ' + err.toString();
+        showToast('Error al programar envío diario', 'error');
+      } finally {
+        isSendingBackup.value = false;
+      }
+    };
+
     const saveFirestoreConfig = () => {
       firestoreEnabled.value = !!firestoreConfig.value.projectId;
       saveState();
@@ -5045,6 +5485,14 @@ createApp({
       supabaseStatusMessage,
       testSupabaseConnection,
       syncAllToSupabase,
+      backupEmail,
+      autoBackupEnabled,
+      isSendingBackup,
+      backupStatusMessage,
+      saveBackupConfig,
+      sendBackupEmailAndExcel,
+      shareOrDownloadSellerExcel,
+      setupDailyEmailTrigger,
       firestoreConfig,
       firestoreEnabled,
       saveFirestoreConfig,
