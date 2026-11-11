@@ -1720,7 +1720,7 @@
           <!-- Reset / Factory Seed Data -->
           <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
             <h4 class="text-sm font-bold text-red-800">Zona de mantenimiento</h4>
-            <p class="text-xs text-gray-500">Restaura el catálogo oficial de 33 emprendimientos y 147 productos.</p>
+            <p class="text-xs text-gray-500">Restaura el catálogo oficial de 34 emprendimientos y 158 productos.</p>
             <button 
               @click="resetToSeedData" 
               class="px-3 py-2 bg-red-50 text-red-700 border border-red-300 text-xs font-bold rounded-xl active-scale hover:bg-red-100"
@@ -2152,9 +2152,10 @@ const SEED_COMERCIOS = [
   { id: 'emp-31', nombre: 'Vittal Juice', activo: true },
   { id: 'emp-32', nombre: 'Makiel', activo: true },
   { id: 'emp-33', nombre: 'Apadaria', activo: true },
+  { id: 'emp-34', nombre: 'Corazón palmiño', activo: true },
 ];
 
-// 2. 147 Real Seed Products with catalog prices
+// 2. 158 Real Seed Products with catalog prices
 const SEED_PRODUCTOS = [
   { id: 'prod-1', codigo: 'PROD-001', nombre: 'Galleta Nostalgia x200gr', precio: 12000, activo: true },
   { id: 'prod-2', codigo: 'PROD-002', nombre: 'Galleta Navideña x200gr', precio: 12000, activo: true },
@@ -2303,6 +2304,17 @@ const SEED_PRODUCTOS = [
   { id: 'prod-145', codigo: 'PROD-145', nombre: 'Granola keto frutos rojos', precio: 23000, activo: true },
   { id: 'prod-146', codigo: 'PROD-146', nombre: 'Granola Keto nueces y semillas', precio: 25000, activo: true },
   { id: 'prod-147', codigo: 'PROD-147', nombre: 'Palitos de hojaldre x 14', precio: 16000, activo: true },
+  { id: 'prod-148', codigo: 'PROD-148', nombre: 'Café lavado molido 250gr', precio: 30000, activo: true },
+  { id: 'prod-149', codigo: 'PROD-149', nombre: 'Café natural molido 250gr', precio: 33000, activo: true },
+  { id: 'prod-150', codigo: 'PROD-150', nombre: 'Natural molido 125gr', precio: 17000, activo: true },
+  { id: 'prod-151', codigo: 'PROD-151', nombre: 'Lavado grano 500gr', precio: 60000, activo: true },
+  { id: 'prod-152', codigo: 'PROD-152', nombre: 'Lavado molido 500gr', precio: 60000, activo: true },
+  { id: 'prod-153', codigo: 'PROD-153', nombre: 'Natural molido 500gr', precio: 65000, activo: true },
+  { id: 'prod-154', codigo: 'PROD-154', nombre: 'Lavado molido 125gr', precio: 16000, activo: true },
+  { id: 'prod-155', codigo: 'PROD-155', nombre: 'Lavado en grano 125gr', precio: 16000, activo: true },
+  { id: 'prod-156', codigo: 'PROD-156', nombre: 'Filtrado 4oz', precio: 8000, activo: true },
+  { id: 'prod-157', codigo: 'PROD-157', nombre: 'Tinto precoladora 4oz', precio: 4000, activo: true },
+  { id: 'prod-158', codigo: 'PROD-158', nombre: 'Lavado grano 250gr', precio: 30000, activo: true },
 ];
 
 // 3. Real Product Assignment Matrix by Business
@@ -2340,6 +2352,7 @@ const SEED_COMERCIO_MAP = {
   'emp-31': ['prod-132', 'prod-133', 'prod-134', 'prod-135', 'prod-136', 'prod-137', 'prod-138'],
   'emp-32': ['prod-139', 'prod-140', 'prod-141', 'prod-142', 'prod-143', 'prod-144', 'prod-145', 'prod-146'],
   'emp-33': ['prod-147'],
+  'emp-34': ['prod-148', 'prod-149', 'prod-150', 'prod-151', 'prod-152', 'prod-153', 'prod-154', 'prod-155', 'prod-156', 'prod-157', 'prod-158'],
 };
 
 // 4. Preloaded Staff Users
@@ -3232,7 +3245,7 @@ createApp({
           staffUsers.value = storedUsers ? JSON.parse(storedUsers) : JSON.parse(JSON.stringify(SEED_USERS));
         }
 
-        const CATALOG_VERSION = 'v20261110_real_33';
+        const CATALOG_VERSION = 'v20261110_real_34';
         const storedCatalogVersion = localStorage.getItem('rm_catalog_version');
 
         if (storedCatalogVersion !== CATALOG_VERSION) {
@@ -4812,15 +4825,15 @@ createApp({
 
     // Reset Seed Data
     const resetToSeedData = () => {
-      if (!confirm('¿Restablecer comercios y productos al catálogo de 33 emprendimientos reales?')) return;
+      if (!confirm('¿Restablecer comercios y productos al catálogo de 34 emprendimientos reales?')) return;
       comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
       productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
       comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
-      localStorage.setItem('rm_catalog_version', 'v20261110_real_33');
+      localStorage.setItem('rm_catalog_version', 'v20261110_real_34');
       saveState();
       // Auto-sync reset catalog with Google Sheets
       syncCatalogToWebhook(true);
-      showToast('Catálogo de 33 emprendimientos y 147 productos restablecido y sincronizado con éxito', 'success');
+      showToast('Catálogo de 34 emprendimientos y 158 productos restablecido y sincronizado con éxito', 'success');
     };
 
     // -------------------------------------------------------------------
