@@ -1720,7 +1720,7 @@
           <!-- Reset / Factory Seed Data -->
           <div class="bg-white p-4 rounded-2xl border border-red-200 shadow-sm space-y-2">
             <h4 class="text-sm font-bold text-red-800">Zona de mantenimiento</h4>
-            <p class="text-xs text-gray-500">Restaura el catálogo semilla original de 10 comercios y 10 productos.</p>
+            <p class="text-xs text-gray-500">Restaura el catálogo oficial de 33 emprendimientos y 147 productos.</p>
             <button 
               @click="resetToSeedData" 
               class="px-3 py-2 bg-red-50 text-red-700 border border-red-300 text-xs font-bold rounded-xl active-scale hover:bg-red-100"
@@ -2145,9 +2145,16 @@ const SEED_COMERCIOS = [
   { id: 'emp-24', nombre: 'Salsas Charlie', activo: true },
   { id: 'emp-25', nombre: 'Natural Vienna', activo: true },
   { id: 'emp-26', nombre: 'Café Hacherit', activo: true },
+  { id: 'emp-27', nombre: 'Bodega Vitalia', activo: true },
+  { id: 'emp-28', nombre: 'Lamaos', activo: true },
+  { id: 'emp-29', nombre: 'O campo frutas', activo: true },
+  { id: 'emp-30', nombre: 'Tiberio', activo: true },
+  { id: 'emp-31', nombre: 'Vittal Juice', activo: true },
+  { id: 'emp-32', nombre: 'Makiel', activo: true },
+  { id: 'emp-33', nombre: 'Apadaria', activo: true },
 ];
 
-// 2. 125 Real Seed Products with catalog prices
+// 2. 147 Real Seed Products with catalog prices
 const SEED_PRODUCTOS = [
   { id: 'prod-1', codigo: 'PROD-001', nombre: 'Galleta Nostalgia x200gr', precio: 12000, activo: true },
   { id: 'prod-2', codigo: 'PROD-002', nombre: 'Galleta Navideña x200gr', precio: 12000, activo: true },
@@ -2274,6 +2281,28 @@ const SEED_PRODUCTOS = [
   { id: 'prod-123', codigo: 'PROD-123', nombre: 'Suave lavado 500gr', precio: 60000, activo: true },
   { id: 'prod-124', codigo: 'PROD-124', nombre: 'Geisha 250gr', precio: 50000, activo: true },
   { id: 'prod-125', codigo: 'PROD-125', nombre: 'Café individual', precio: 4000, activo: true },
+  { id: 'prod-126', codigo: 'PROD-126', nombre: 'Queso madurado', precio: 16000, activo: true },
+  { id: 'prod-127', codigo: 'PROD-127', nombre: 'Pan masa madre', precio: 16000, activo: true },
+  { id: 'prod-128', codigo: 'PROD-128', nombre: 'Aromatica funcional', precio: 7000, activo: true },
+  { id: 'prod-129', codigo: 'PROD-129', nombre: 'Mermeladas', precio: 15000, activo: true },
+  { id: 'prod-130', codigo: 'PROD-130', nombre: 'Grasa 500gr', precio: 21950, activo: true },
+  { id: 'prod-131', codigo: 'PROD-131', nombre: 'Grasa 1litro', precio: 39950, activo: true },
+  { id: 'prod-132', codigo: 'PROD-132', nombre: 'Shot verde', precio: 7000, activo: true },
+  { id: 'prod-133', codigo: 'PROD-133', nombre: 'Shot frutos rojos', precio: 7000, activo: true },
+  { id: 'prod-134', codigo: 'PROD-134', nombre: 'Shots bahia', precio: 7000, activo: true },
+  { id: 'prod-135', codigo: 'PROD-135', nombre: 'Shots ventura', precio: 7000, activo: true },
+  { id: 'prod-136', codigo: 'PROD-136', nombre: 'Shots de sol', precio: 7000, activo: true },
+  { id: 'prod-137', codigo: 'PROD-137', nombre: 'Bebida lulo', precio: 4000, activo: true },
+  { id: 'prod-138', codigo: 'PROD-138', nombre: 'Bebida fresa', precio: 4000, activo: true },
+  { id: 'prod-139', codigo: 'PROD-139', nombre: 'Crema de mani', precio: 16000, activo: true },
+  { id: 'prod-140', codigo: 'PROD-140', nombre: 'Crema de almendras', precio: 28000, activo: true },
+  { id: 'prod-141', codigo: 'PROD-141', nombre: 'Crema de marañon', precio: 40000, activo: true },
+  { id: 'prod-142', codigo: 'PROD-142', nombre: 'Crema de macadamia', precio: 50000, activo: true },
+  { id: 'prod-143', codigo: 'PROD-143', nombre: 'Granola de mani', precio: 15000, activo: true },
+  { id: 'prod-144', codigo: 'PROD-144', nombre: 'Granola keto chocolate', precio: 20000, activo: true },
+  { id: 'prod-145', codigo: 'PROD-145', nombre: 'Granola keto frutos rojos', precio: 23000, activo: true },
+  { id: 'prod-146', codigo: 'PROD-146', nombre: 'Granola Keto nueces y semillas', precio: 25000, activo: true },
+  { id: 'prod-147', codigo: 'PROD-147', nombre: 'Palitos de hojaldre x 14', precio: 16000, activo: true },
 ];
 
 // 3. Real Product Assignment Matrix by Business
@@ -2304,6 +2333,13 @@ const SEED_COMERCIO_MAP = {
   'emp-24': ['prod-106', 'prod-107', 'prod-108', 'prod-109', 'prod-110', 'prod-111', 'prod-112', 'prod-113'],
   'emp-25': ['prod-114', 'prod-115', 'prod-116', 'prod-117'],
   'emp-26': ['prod-118', 'prod-119', 'prod-120', 'prod-121', 'prod-122', 'prod-123', 'prod-124', 'prod-125'],
+  'emp-27': ['prod-126', 'prod-127'],
+  'emp-28': ['prod-128'],
+  'emp-29': ['prod-129'],
+  'emp-30': ['prod-130', 'prod-131'],
+  'emp-31': ['prod-132', 'prod-133', 'prod-134', 'prod-135', 'prod-136', 'prod-137', 'prod-138'],
+  'emp-32': ['prod-139', 'prod-140', 'prod-141', 'prod-142', 'prod-143', 'prod-144', 'prod-145', 'prod-146'],
+  'emp-33': ['prod-147'],
 };
 
 // 4. Preloaded Staff Users
@@ -3196,7 +3232,7 @@ createApp({
           staffUsers.value = storedUsers ? JSON.parse(storedUsers) : JSON.parse(JSON.stringify(SEED_USERS));
         }
 
-        const CATALOG_VERSION = 'v20261028_real_26';
+        const CATALOG_VERSION = 'v20261110_real_33';
         const storedCatalogVersion = localStorage.getItem('rm_catalog_version');
 
         if (storedCatalogVersion !== CATALOG_VERSION) {
@@ -4776,15 +4812,15 @@ createApp({
 
     // Reset Seed Data
     const resetToSeedData = () => {
-      if (!confirm('¿Restablecer comercios y productos al catálogo de 26 emprendimientos reales?')) return;
+      if (!confirm('¿Restablecer comercios y productos al catálogo de 33 emprendimientos reales?')) return;
       comercios.value = JSON.parse(JSON.stringify(SEED_COMERCIOS));
       productos.value = JSON.parse(JSON.stringify(SEED_PRODUCTOS));
       comercioProductsMap.value = JSON.parse(JSON.stringify(SEED_COMERCIO_MAP));
-      localStorage.setItem('rm_catalog_version', 'v20261028_real_26');
+      localStorage.setItem('rm_catalog_version', 'v20261110_real_33');
       saveState();
       // Auto-sync reset catalog with Google Sheets
       syncCatalogToWebhook(true);
-      showToast('Catálogo de 26 emprendimientos y 125 productos restablecido y sincronizado con éxito', 'success');
+      showToast('Catálogo de 33 emprendimientos y 147 productos restablecido y sincronizado con éxito', 'success');
     };
 
     // -------------------------------------------------------------------
